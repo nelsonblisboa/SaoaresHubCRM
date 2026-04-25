@@ -1,0 +1,91 @@
+# docker-compose.yml para desenvolvimento - SOARES HUB CRM
+# Usando Supabase Cloud (configurado no .env)
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      EVOLUTION_API_URL: ${EVOLUTION_API_URL}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      REDIS_URL: redis://redis:6379
+      AIRFLOW_URL: http://airflow:8080
+    depends_on:
+      - redis
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  airflow:
+    image: apache/airflow:2.9.3
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${SUPABASE_DB_PASSWORD}@db:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__WEB_SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
+    depends_on:
+      - redis
+    env_file:
+      - ./backend/.env
+
+  evolution:
+    image: ghcr.io/evolutionapi/evolution-api:v2.0.0
+    ports:
+      - "8081:8081"
+    environment:
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-your-evolution-api-key}
+      - DATABASE_ENABLED=false
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - evolution_instances:/evolution/instances
+
+  instagram-service:
+    build: ./instagram-service
+    ports:
+      - "8000:8000"
+    environment:
+      - INSTAGRAM_USERNAME=${INSTAGRAM_USERNAME:-}
+      - INSTAGRAM_PASSWORD=${INSTAGRAM_PASSWORD:-}
+    env_file:
+      - ./backend/.env
+
+volumes:
+  redis_data:
+  airflow_logs:
+  airflow_plugins:
+  evolution_instances:

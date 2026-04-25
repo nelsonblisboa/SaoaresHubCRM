@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Soares Hub - Lista de Conversas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#afcdbe",
+                        "outline-variant": "#bec9c2",
+                        "primary-container": "#065f46",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "light-surface-container-lowest": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#8bd6b6",
+                        "primary-fixed": "#a6f2d1",
+                        "on-secondary": "#ffffff",
+                        "primary": "#004532",
+                        "dark-surface-container-lowest": "#25282b",
+                        "dark-surface": "#191c1e",
+                        "dark-on-surface": "#e1e3e5",
+                        "dark-surface-container-low": "#1e2124",
+                        "background": "#f7f9fb",
+                        "dark-primary-container": "#065F46",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed": "#7ffc97",
+                        "secondary-fixed": "#cbe9da",
+                        "on-primary-fixed-variant": "#00513b",
+                        "tertiary-container": "#006127",
+                        "on-secondary-container": "#4d685c",
+                        "outline": "#6f7973",
+                        "success": "#16A34A",
+                        "dark-primary": "#8bd6b6",
+                        "light-on-surface": "#191c1e",
+                        "on-surface": "#191c1e",
+                        "secondary-container": "#c8e7d7",
+                        "tertiary-fixed-dim": "#62df7d",
+                        "primary-fixed-dim": "#8bd6b6",
+                        "surface-tint": "#1b6b51",
+                        "secondary": "#496458",
+                        "error": "#ba1a1a",
+                        "surface-container": "#eceef0",
+                        "light-surface-container-high": "#e0e3e5",
+                        "on-background": "#191c1e",
+                        "surface": "#f7f9fb",
+                        "dark-surface-container-high": "#2d3135",
+                        "surface-container-high": "#e6e8ea",
+                        "on-surface-variant": "#3f4944",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-primary-container": "#8bd6b7",
+                        "on-tertiary-container": "#63e07e",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed": "#002109",
+                        "light-surface-container-low": "#f2f4f6",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#00471b",
+                        "surface-container-low": "#f2f4f6",
+                        "on-secondary-fixed": "#052017",
+                        "on-primary-fixed": "#002116",
+                        "on-tertiary-fixed-variant": "#005320",
+                        "light-surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#314c41",
+                        "surface-container-lowest": "#ffffff",
+                        "light-surface-tint": "#1b6b51"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "margin": "32px",
+                        "lg": "24px",
+                        "gutter": "24px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Manrope"],
+                        "display-sm": ["Manrope"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Manrope"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-sm": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background h-screen flex overflow-hidden antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- SideNavBar -->
+<nav class="bg-slate-50/85 dark:bg-slate-950/85 backdrop-blur-[20px] font-inter text-sm font-medium h-screen w-64 fixed left-0 top-0 bg-surface_container_lowest shadow-xl shadow-emerald-900/5 shadow-[32px_0_64px_rgba(27,107,81,0.06)] flex flex-col h-full py-6 z-40 hidden md:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined fill-icon text-[24px]">spa</span>
+</div>
+<div>
+<h1 class="font-manrope font-extrabold text-[#065F46] tracking-tight text-base">Soares CRM</h1>
+<p class="text-xs text-outline font-normal">Emerald Sanctuary</p>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto flex flex-col gap-1 px-2">
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span>Leads</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="view_kanban">view_kanban</span>
+<span>Kanban</span>
+</a>
+<a class="bg-[#065F46]/10 text-[#065F46] rounded-lg mx-2 px-4 py-3 flex items-center gap-3 transition-colors duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined fill-icon" data-icon="forum">forum</span>
+<span class="font-bold">Chat</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Insights</span>
+</a>
+</div>
+<div class="px-4 mt-auto pt-6 flex flex-col gap-1">
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+<span>Theme</span>
+</a>
+<a class="text-slate-500 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors duration-300 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<div class="mt-4 px-2">
+<button class="w-full bg-gradient-to-br from-[#065F46] to-[#004532] text-on-primary font-label-lg py-3 rounded-lg shadow-[0_8px_16px_rgba(27,107,81,0.2)] hover:shadow-[0_12px_24px_rgba(27,107,81,0.3)] transition-all duration-300 scale-95 active:scale-90">
+                    Assumir
+                </button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col h-screen relative">
+<!-- TopNavBar -->
+<header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-[20px] font-manrope antialiased tracking-tight docked full-width top-0 sticky z-50 shadow-[0_8px_32px_rgba(27,107,81,0.06)] flex justify-between items-center px-8 py-3 w-full">
+<div class="flex items-center gap-4">
+<div class="text-xl font-black text-[#065F46] dark:text-emerald-50 tracking-tighter">SOARES HUB</div>
+</div>
+<div class="flex items-center bg-surface-container-low rounded-full px-4 py-2 w-full max-w-md mx-8 transition-colors focus-within:bg-surface-container-high ring-2 ring-transparent focus-within:ring-primary/40">
+<span class="material-symbols-outlined text-outline mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none outline-none w-full font-body-md text-on-surface placeholder:text-outline-variant" placeholder="Buscar conversas..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 transition-all scale-95 active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="light_mode">light_mode</span>
+</button>
+<button class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 transition-all scale-95 active:scale-90 duration-200 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 transition-all scale-95 active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Conversas Content -->
+<div class="flex-1 overflow-y-auto flex flex-col bg-surface">
+<!-- Glass Header Filters -->
+<div class="sticky top-0 z-30 bg-surface/80 backdrop-blur-md px-margin py-lg flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-lg text-on-surface tracking-tight">Conversas</h2>
+<button class="flex items-center gap-xs text-primary font-label-lg hover:bg-surface-container-highest px-3 py-1.5 rounded-full transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filtros Avançados
+                    </button>
+</div>
+<div class="flex items-center gap-sm overflow-x-auto pb-2 scrollbar-hide">
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full font-label-lg bg-primary text-on-primary transition-colors">
+                        Todos
+                    </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full font-label-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                        WhatsApp
+                    </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full font-label-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                        Instagram
+                    </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full font-label-lg bg-secondary-container text-on-secondary-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] fill-icon">smart_toy</span>
+                        IA Ativa
+                    </button>
+<button class="whitespace-nowrap px-4 py-1.5 rounded-full font-label-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+                        Aguardando
+                    </button>
+</div>
+</div>
+<!-- List Container -->
+<div class="flex flex-col px-margin pb-margin gap-sm">
+<!-- Chat Item 1 -->
+<div class="group flex items-center gap-md p-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(27,107,81,0.04)]">
+<div class="relative shrink-0">
+<img alt="Avatar Mariana" class="w-12 h-12 rounded-full object-cover" data-alt="Profile picture of Mariana with green background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6fHd2pwzZO5lg7mgmEwnwhethbYfijz434aG24lGs8CQZ9II3dzkmCcw-EaGb94rqEimFmvc7mw0PkGbf54juVvyzPDuGZlzCmJqKI9PMdcUqa7nSgUy00iIXOoAMuHdIiNr2wLDH4HvjA28B9_uQHvtSRX3lLMyabN53nVl-8HvTXACkGQpwvp9vcPF8ah0NS2ukwwZz9jfgTn2bgETPB2ffTJ0ELgw_gyHdyLOEl59NxYDn9QEL3lBtEy5YbqW57HTFiwXBQEnJ"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-success fill-icon">chat</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-1">
+<h3 class="font-label-lg text-on-surface truncate">Mariana Costa</h3>
+<span class="font-label-md text-outline">10:42</span>
+</div>
+<p class="font-body-md text-on-surface-variant truncate">Sim, eu gostaria de agendar uma visita para conhecer o empreendimento amanhã.</p>
+</div>
+<div class="flex flex-col items-end gap-2 shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container font-label-md">
+<span class="material-symbols-outlined text-[12px] fill-icon">smart_toy</span>
+                            IA Ativa
+                        </span>
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+</div>
+</div>
+<!-- Chat Item 2 -->
+<div class="group flex items-center gap-md p-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(27,107,81,0.04)]">
+<div class="relative shrink-0">
+<img alt="Avatar Roberto" class="w-12 h-12 rounded-full object-cover" data-alt="Profile picture of Roberto with light grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUfOYb6940paVWlgwyQJrlB8u636WFi-WbgDKziMCIwkDdzwgY_ST_nweNR7tQB2Mc5bLf1kIbruEngdfzO5gZVwGEOHmXRpoZMsegLS3EeoVQHv6EcC5W9ltRGUE2b3RxKZw-tOq8UWtxccm-khu2dztZF2KR6-lfZtxa4EnA--sh_IQP7X8hqZSl89QAedlAD0ju-MkTjziz60TG08SwKD4d91IJN1Fp8cCL2z88_xNKp2MxrsV6wNKMSgoRudvBLS-tmQ4zVlw0"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-primary fill-icon">photo_camera</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-1">
+<h3 class="font-label-lg text-on-surface truncate">Roberto Almeida</h3>
+<span class="font-label-md text-outline">Ontem</span>
+</div>
+<p class="font-body-md text-outline-variant truncate">Perfeito, aguardo o envio do contrato por e-mail.</p>
+</div>
+<div class="flex flex-col items-end gap-2 shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-md">
+<span class="material-symbols-outlined text-[12px]">person</span>
+                            Humano
+                        </span>
+</div>
+</div>
+<!-- Chat Item 3 - Aguardando -->
+<div class="group flex items-center gap-md p-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(27,107,81,0.04)] border-l-4 border-l-error">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[24px]">person</span>
+</div>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-success fill-icon">chat</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-1">
+<h3 class="font-label-lg text-on-surface font-semibold truncate">+55 11 98765-4321</h3>
+<span class="font-label-md text-error font-medium">09:15</span>
+</div>
+<p class="font-body-md text-on-surface-variant truncate font-medium">Qual o valor do condomínio da unidade 402?</p>
+</div>
+<div class="flex flex-col items-end gap-2 shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-error-container text-on-error-container font-label-md">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+                            Aguardando
+                        </span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] bg-error text-white px-1.5 py-0.5 rounded-full font-bold">2</span>
+</div>
+</div>
+</div>
+<!-- Chat Item 4 -->
+<div class="group flex items-center gap-md p-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-200 cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_16px_rgba(27,107,81,0.04)]">
+<div class="relative shrink-0">
+<img alt="Avatar Ana" class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of a smiling young woman with dark hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ2vHepHHRGeIHqSTgxAfCETv8bXIYBBG8E8f9A-VWvMTlEG5dKJghf0oQIc4DQmIoTnOWOWmDuHzTAluzYpZkzU2l67utvrmZcH-gPf42Zngto6ZmvYfhXp_SUrxLYij6OU5CsYZwKGOQDNFZyFI7EaxNkNLPgZt9PqsCQgmG6jL30zlc7-EEAZmTl0WlvSnGwzBG7y9E-ZdbkMelV7k5bt2f_5LFRx1xWCCECUA81d64Vk0fcb6bw8HfcZkRznQK-1qNHVr3agdH"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-success fill-icon">chat</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between mb-1">
+<h3 class="font-label-lg text-on-surface truncate">Ana Beatriz (Lead)</h3>
+<span class="font-label-md text-outline">Segunda</span>
+</div>
+<p class="font-body-md text-outline-variant truncate">Muito obrigada pelo atendimento, ajudou muito!</p>
+</div>
+<div class="flex flex-col items-end gap-2 shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container font-label-md">
+<span class="material-symbols-outlined text-[12px] fill-icon">smart_toy</span>
+                            IA Ativa
+                        </span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

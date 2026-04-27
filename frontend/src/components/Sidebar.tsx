@@ -6,7 +6,9 @@ import {
   MessageSquare, 
   KanbanSquare, 
   Settings, 
-  BarChart3 
+  BarChart3,
+  Megaphone,
+  ListOrdered 
 } from 'lucide-react'
 import { useThemeClasses } from '../hooks/useThemeClasses'
 
@@ -20,6 +22,8 @@ const Sidebar: React.FC = () => {
     { icon: KanbanSquare, label: 'Kanban', path: '/kanban' },
     { icon: MessageSquare, label: 'Chat', path: '/conversations' },
     { icon: BarChart3, label: 'Insights', path: '/insights' },
+    { icon: Megaphone, label: 'Campanhas', path: '/campaigns' },
+    { icon: ListOrdered, label: 'Sequências', path: '/sequences' },
   ]
 
   return (

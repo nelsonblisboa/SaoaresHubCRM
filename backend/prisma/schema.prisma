@@ -12,13 +12,17 @@ datasource db {
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  users     User[]
-  contacts  Contact[]
-  leads     Lead[]
-  campanhas Campanha[]
+  id           String   @id @default(uuid())
+  name         String
+  persona      String?  // Persona/tom de voz da IA para esta organização
+  logo         String?  // URL do logo para white label
+  primaryColor String?  // Cor primária para branding
+  createdAt    DateTime @default(now())
+  users        User[]
+  contacts     Contact[]
+  leads        Lead[]
+  campanhas    Campanha[]
+  sequences    Sequence[]
 }
 
 model User {
@@ -33,17 +37,18 @@ model User {
 }
 
 model Contact {
-  id               String        @id @default(uuid())
-  name             String?
-  phoneNumber      String?       @unique
-  instagramUsername String?      @unique
-  tags             String[]
-  source           String?       // whatsapp, instagram, manual
-  organizationId   String
-  organization     Organization  @relation(fields: [organizationId], references: [id])
-  leads            Lead[]
-  conversations    Conversation[]
-  createdAt        DateTime      @default(now())
+  id                String             @id @default(uuid())
+  name              String?
+  phoneNumber       String?            @unique
+  instagramUsername  String?            @unique
+  tags              String[]
+  source            String?            // whatsapp, instagram, manual
+  organizationId    String
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  leads             Lead[]
+  conversations     Conversation[]
+  scheduledMessages ScheduledMessage[]
+  createdAt         DateTime           @default(now())
 }
 
 model Lead {
@@ -51,13 +56,15 @@ model Lead {
   stage          LeadStage     @default(NOVO)
   score          Int           @default(0)
   temperature    Temperature   @default(FRIO)
+  dealValue      Float?        // Valor da negociação
   notes          String?
+  funnelStage    String?       // Estágio interno do funil (QUALIFICACAO, OBJECOES, PROPOSTA, FOLLOWUP, FECHAMENTO)
   contactId      String
   contact        Contact       @relation(fields: [contactId], references: [id])
   assignedToId   String?
   assignedTo     User?         @relation(fields: [assignedToId], references: [id])
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id])
   conversations  Conversation[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -70,6 +77,7 @@ model Conversation {
   isAiActive     Boolean            @default(true)
   lastMessage    String?
   lastMessageAt  DateTime?
+  activeAgent    String?            // Qual agente IA está ativo nesta conversa
   contactId      String
   contact        Contact            @relation(fields: [contactId], references: [id])
   leadId         String?
@@ -85,6 +93,7 @@ model Message {
   fromMe         Boolean
   messageType    String       // text, image, audio
   isAiGenerated  Boolean      @default(false)
+  agentKey       String?      // Qual agente IA gerou esta mensagem
   timestamp      DateTime     @default(now())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
@@ -102,14 +111,76 @@ model Handover {
 }
 
 model Campanha {
-  id             String       @id @default(uuid())
-  nome           String
-  canal          Channel
-  segmento       Json?        // filtros de contatos
-  status         String       @default("rascunho")
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime     @default(now())
+  id             String        @id @default(uuid())
+  name           String        @default("")
+  nome           String        @default("")
+  channel        String        @default("WHATSAPP")
+  canal          Channel?
+  segment        Json?         // Filtros de segmentação
+  segmento       Json?         // filtros de contatos (legado)
+  status         String        @default("RASCUNHO")
+  aiPrompt       String?       // Prompt para gerar mensagens personalizadas
+  totalSent      Int           @default(0)
+  totalDelivered Int           @default(0)
+  totalReplied   Int           @default(0)
+  totalConverted Int           @default(0)
+  scheduledAt    DateTime?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime      @default(now())
+}
+
+// ─── Sequências de Follow-up ───
+
+model Sequence {
+  id             String               @id @default(uuid())
+  name           String
+  trigger        String               // Ex: 'lead_cold_5days', 'no_reply_48h'
+  isActive       Boolean              @default(true)
+  organizationId String?
+  organization   Organization?        @relation(fields: [organizationId], references: [id])
+  steps          SequenceStep[]
+  enrollments    SequenceEnrollment[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+}
+
+model SequenceStep {
+  id              String    @id @default(uuid())
+  order           Int
+  delayMinutes    Int       // Delay antes de enviar (em minutos)
+  messageTemplate String?   // Template fixo (se não usar IA)
+  channel         String    @default("WHATSAPP")
+  useAi           Boolean   @default(false)
+  aiPrompt        String?   // Prompt para a IA gerar mensagem
+  sequenceId      String
+  sequence        Sequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+}
+
+model SequenceEnrollment {
+  id            String    @id @default(uuid())
+  sequenceId    String
+  sequence      Sequence  @relation(fields: [sequenceId], references: [id])
+  contactId     String
+  currentStep   Int       @default(1)
+  status        String    @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  nextRunAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+// ─── Agendamento de Mensagens ───
+
+model ScheduledMessage {
+  id          String   @id @default(uuid())
+  content     String
+  channel     String   @default("WHATSAPP")
+  status      String   @default("PENDING") // PENDING, SENT, FAILED, CANCELLED
+  scheduledAt DateTime
+  sentAt      DateTime?
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 model UserDevice {

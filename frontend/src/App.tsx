@@ -11,6 +11,8 @@ import Kanban from './pages/Kanban'
 import Settings from './pages/Settings'
 import Leads from './pages/Leads'
 import Insights from './pages/Insights'
+import Campaigns from './pages/Campaigns'
+import Sequences from './pages/Sequences'
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
                 <Route path="/kanban" element={<Kanban />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/insights" element={<Insights />} />
+                <Route path="/campaigns" element={<Campaigns />} />
+                <Route path="/sequences" element={<Sequences />} />
               </Routes>
             </div>
           </BrowserRouter>

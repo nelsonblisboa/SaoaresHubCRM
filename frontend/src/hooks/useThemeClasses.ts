@@ -52,9 +52,6 @@ export const useThemeClasses = () => {
     inputBorder: isDarkMode ? 'border-slate-700' : 'border-gray-300',
     inputText: isDarkMode ? 'text-slate-200' : 'text-gray-900',
     
-    // Modais
-    modalBg: isDarkMode ? 'bg-slate-900' : 'bg-white',
-    modalOverlay: isDarkMode ? 'bg-black/60' : 'bg-black/40',
     
     // Ícones
     iconMuted: isDarkMode ? 'text-slate-500' : 'text-gray-400',

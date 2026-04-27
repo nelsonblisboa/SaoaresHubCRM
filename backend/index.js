@@ -474,20 +474,39 @@ fastify.post('/webhook/evolution', async (request, reply) => {
       return reply.send({ status: 'ignored' });
     }
 
-    // Busca ou cria contato
+    const messageText = message.conversation || message.extendedTextMessage?.text || '';
+    if (!messageText) {
+      return reply.send({ status: 'no_text' });
+    }
+
+    // Busca ou cria contato automaticamente
     let contact = await prisma.contact.findUnique({
       where: { phoneNumber }
     });
 
     if (!contact) {
-      // Precisa do organizationId - por agora usa um padrão
-      // Em produção, isso viria do webhook ou configuração
-      return reply.send({ status: 'contact_not_created' });
+      // Auto-criar contato com nome do push notification
+      // Em produção, organizationId viria da configuração da instância Evolution
+      const defaultOrg = await prisma.organization.findFirst();
+      if (!defaultOrg) {
+        return reply.send({ status: 'no_organization' });
+      }
+
+      contact = await prisma.contact.create({
+        data: {
+          name: pushName || `Lead ${phoneNumber}`,
+          phoneNumber,
+          source: 'whatsapp',
+          tags: ['auto-captura', 'whatsapp'],
+          organizationId: defaultOrg.id,
+        }
+      });
+      console.log(`[Webhook] Novo contato criado: ${contact.name} (${phoneNumber})`);
     }
 
-    // Cria ou atualiza conversa
+    // Cria ou busca conversa
     let conversation = await prisma.conversation.findFirst({
-      where: { contactId: contact.id }
+      where: { contactId: contact.id, status: { not: 'FECHADA' } }
     });
 
     if (!conversation) {
@@ -500,10 +519,34 @@ fastify.post('/webhook/evolution', async (request, reply) => {
       });
     }
 
-    // Salva mensagem
+    // Auto-criar lead se não existe
+    const existingLead = await prisma.lead.findFirst({
+      where: { contactId: contact.id, stage: { notIn: ['GANHO', 'PERDIDO'] } }
+    });
+
+    if (!existingLead) {
+      const newLead = await prisma.lead.create({
+        data: {
+          stage: 'NOVO',
+          score: 1,
+          temperature: 'FRIO',
+          contactId: contact.id,
+          organizationId: contact.organizationId,
+        }
+      });
+
+      // Vincular lead à conversa
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { leadId: newLead.id }
+      });
+      console.log(`[Webhook] Lead auto-criado para ${contact.name}`);
+    }
+
+    // Salva mensagem recebida
     await prisma.message.create({
       data: {
-        content: message.conversation || message.extendedTextMessage?.text || '',
+        content: messageText,
         fromMe: false,
         messageType: message.conversation ? 'text' : 'extendedTextMessage',
         conversationId: conversation.id
@@ -514,16 +557,16 @@ fastify.post('/webhook/evolution', async (request, reply) => {
     await prisma.conversation.update({
       where: { id: conversation.id },
       data: {
-        lastMessage: message.conversation || message.extendedTextMessage?.text || '',
+        lastMessage: messageText,
         lastMessageAt: new Date()
       }
     });
 
-    // Adiciona à fila de processamento de IA
+    // Adiciona à fila de processamento multi-agentes
     if (conversation.isAiActive) {
       await messageQueue.add('processMessage', {
         conversationId: conversation.id,
-        messageContent: message.conversation || message.extendedTextMessage?.text || ''
+        messageContent: messageText,
       });
     }
 
@@ -559,6 +602,194 @@ fastify.post('/instagram/job/prospect', {
 });
 
 // ============================================
+// ROTAS DE AGENTES IA
+// ============================================
+
+// Listar agentes disponíveis
+fastify.get('/agents', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  const { listAgents } = require('./worker/agents/agentRegistry');
+  return { agents: listAgents() };
+});
+
+// ============================================
+// PIPELINE ANALYTICS (Detecção de Gargalos)
+// ============================================
+
+fastify.get('/pipeline/analytics', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  const { organizationId } = request.query;
+
+  try {
+    const stages = ['NOVO', 'QUALIFICADO', 'PROPOSTA', 'NEGOCIACAO', 'GANHO', 'PERDIDO'];
+
+    const stageData = await Promise.all(
+      stages.map(async (stage) => {
+        const count = await prisma.lead.count({
+          where: { organizationId, stage },
+        });
+
+        // Leads estagnados: sem atualização há mais de 3 dias
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        const stagnant = await prisma.lead.count({
+          where: {
+            organizationId,
+            stage,
+            updatedAt: { lt: threeDaysAgo },
+            stage: { notIn: ['GANHO', 'PERDIDO'] },
+          },
+        });
+
+        return {
+          stage,
+          count,
+          stagnant,
+          isBottleneck: stagnant > count * 0.5 && count > 0,
+        };
+      })
+    );
+
+    // Tempo médio por estágio (simplificado)
+    const totalLeads = stageData.reduce((sum, s) => sum + s.count, 0);
+    const totalStagnant = stageData.reduce((sum, s) => sum + s.stagnant, 0);
+
+    return {
+      stages: stageData,
+      summary: {
+        totalLeads,
+        totalStagnant,
+        bottlenecks: stageData.filter(s => s.isBottleneck).map(s => s.stage),
+        healthScore: totalLeads > 0
+          ? Math.round(((totalLeads - totalStagnant) / totalLeads) * 100)
+          : 100,
+      },
+    };
+  } catch (error) {
+    request.log.error(error);
+    return reply.status(500).send({ error: 'Failed to fetch pipeline analytics' });
+  }
+});
+
+// ============================================
+// ROTAS DE SEQUÊNCIAS DE FOLLOW-UP
+// ============================================
+
+// Listar sequências
+fastify.get('/sequences', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  try {
+    const sequences = await prisma.sequence.findMany({
+      include: { steps: { orderBy: { order: 'asc' } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { sequences };
+  } catch (error) {
+    // Se tabela não existe ainda, retorna array vazio
+    return { sequences: [] };
+  }
+});
+
+// Criar sequência
+fastify.post('/sequences', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  const { name, trigger, steps } = request.body;
+
+  try {
+    const sequence = await prisma.sequence.create({
+      data: {
+        name,
+        trigger, // Ex: 'lead_cold_5days', 'no_reply_48h', 'post_qualification'
+        isActive: true,
+        steps: {
+          create: steps.map((step, index) => ({
+            order: index + 1,
+            delayMinutes: step.delayMinutes,
+            messageTemplate: step.messageTemplate,
+            channel: step.channel || 'WHATSAPP',
+            useAi: step.useAi || false,
+            aiPrompt: step.aiPrompt || null,
+          })),
+        },
+      },
+      include: { steps: true },
+    });
+
+    return { sequence };
+  } catch (error) {
+    request.log.error(error);
+    return reply.status(500).send({ error: 'Failed to create sequence' });
+  }
+});
+
+// Ativar/Desativar sequência
+fastify.patch('/sequences/:id/toggle', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  const { id } = request.params;
+
+  try {
+    const current = await prisma.sequence.findUnique({ where: { id } });
+    if (!current) return reply.status(404).send({ error: 'Sequence not found' });
+
+    const updated = await prisma.sequence.update({
+      where: { id },
+      data: { isActive: !current.isActive },
+    });
+
+    return { sequence: updated };
+  } catch (error) {
+    request.log.error(error);
+    return reply.status(500).send({ error: 'Failed to toggle sequence' });
+  }
+});
+
+// ============================================
+// ROTAS DE CAMPANHAS
+// ============================================
+
+// Listar campanhas
+fastify.get('/campaigns', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  try {
+    const campaigns = await prisma.campanha.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return { campaigns };
+  } catch (error) {
+    return { campaigns: [] };
+  }
+});
+
+// Criar campanha
+fastify.post('/campaigns', {
+  preHandler: [fastify.authenticate]
+}, async (request, reply) => {
+  const { name, channel, segment, aiPrompt, scheduledAt } = request.body;
+
+  try {
+    const campaign = await prisma.campanha.create({
+      data: {
+        name,
+        channel: channel || 'WHATSAPP',
+        status: scheduledAt ? 'AGENDADA' : 'RASCUNHO',
+        segment: segment || {},
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      },
+    });
+
+    return { campaign };
+  } catch (error) {
+    request.log.error(error);
+    return reply.status(500).send({ error: 'Failed to create campaign' });
+  }
+});
+
+// ============================================
 // HEALTH CHECK
 // ============================================
 
@@ -566,7 +797,8 @@ fastify.get('/health', async (request, reply) => {
   return { 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '2.0.0',
+    features: ['multi-agent-orchestration', 'pipeline-analytics', 'auto-qualification']
   };
 });
 

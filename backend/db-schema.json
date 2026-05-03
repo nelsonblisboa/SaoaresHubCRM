@@ -1,0 +1,734 @@
+[
+  {
+    "table_name": "Campanha",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "nome"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "canal"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "segmento"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "status"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "organizationId"
+  },
+  {
+    "table_name": "Campanha",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "name"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "phoneNumber"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "instagramUsername"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "tags"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "source"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "organizationId"
+  },
+  {
+    "table_name": "Contact",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "status"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "channel"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "isAiActive"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "lastMessage"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "lastMessageAt"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "contactId"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "leadId"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Conversation",
+    "column_name": "activeAgent"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "reason"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "status"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "conversationId"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "requestedBy"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "resolvedAt"
+  },
+  {
+    "table_name": "Handover",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "stage"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "score"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "temperature"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "notes"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "contactId"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "assignedToId"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "organizationId"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "updatedAt"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "dealValue"
+  },
+  {
+    "table_name": "Lead",
+    "column_name": "funnelStage"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "content"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "fromMe"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "messageType"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "isAiGenerated"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "timestamp"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "conversationId"
+  },
+  {
+    "table_name": "Message",
+    "column_name": "agentKey"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "id"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "name"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "persona"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "logo"
+  },
+  {
+    "table_name": "Organization",
+    "column_name": "primaryColor"
+  },
+  {
+    "table_name": "User",
+    "column_name": "id"
+  },
+  {
+    "table_name": "User",
+    "column_name": "email"
+  },
+  {
+    "table_name": "User",
+    "column_name": "name"
+  },
+  {
+    "table_name": "User",
+    "column_name": "role"
+  },
+  {
+    "table_name": "User",
+    "column_name": "organizationId"
+  },
+  {
+    "table_name": "UserDevice",
+    "column_name": "id"
+  },
+  {
+    "table_name": "UserDevice",
+    "column_name": "userId"
+  },
+  {
+    "table_name": "UserDevice",
+    "column_name": "token"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "id"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "organization_id"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "key"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "value"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "app_settings",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "id"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "name"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "channel"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "segment"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "status"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "ai_prompt"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "total_sent"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "total_delivered"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "total_replied"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "total_converted"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "scheduled_at"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "organization_id"
+  },
+  {
+    "table_name": "campanhas",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "id"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "name"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "phoneNumber"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "instagram_username"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "tags"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "source"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "organizationId"
+  },
+  {
+    "table_name": "contacts",
+    "column_name": "createdAt"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "id"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "status"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "channel"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "is_ai_active"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "last_message"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "last_message_at"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "active_agent"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "contact_id"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "lead_id"
+  },
+  {
+    "table_name": "conversations",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "id"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "reason"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "status"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "conversation_id"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "requested_by"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "resolved_at"
+  },
+  {
+    "table_name": "handovers",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "id"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "stage"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "score"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "temperature"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "deal_value"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "notes"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "funnel_stage"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "contact_id"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "assigned_to_id"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "organization_id"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "is_deleted"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "deleted_at"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "leads",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "id"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "content"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "from_me"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "message_type"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "is_ai_generated"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "agent_key"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "timestamp"
+  },
+  {
+    "table_name": "messages",
+    "column_name": "conversation_id"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "id"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "name"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "persona"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "logo"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "primary_color"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "instagram_username"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "instagram_password"
+  },
+  {
+    "table_name": "organizations",
+    "column_name": "instagram_service_url"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "email"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "name"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "role"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "organization_id"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "avatar_url"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "id"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "content"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "channel"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "status"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "scheduled_at"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "sent_at"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "contact_id"
+  },
+  {
+    "table_name": "scheduled_messages",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "id"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "sequence_id"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "contact_id"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "current_step"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "status"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "next_run_at"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "completed_at"
+  },
+  {
+    "table_name": "sequence_enrollments",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "id"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "order"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "delay_minutes"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "message_template"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "channel"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "use_ai"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "ai_prompt"
+  },
+  {
+    "table_name": "sequence_steps",
+    "column_name": "sequence_id"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "id"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "name"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "trigger"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "is_active"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "organization_id"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "sequences",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "user_devices",
+    "column_name": "id"
+  },
+  {
+    "table_name": "user_devices",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "user_devices",
+    "column_name": "token"
+  }
+]

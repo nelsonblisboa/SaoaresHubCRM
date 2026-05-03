@@ -1,0 +1,10 @@
+# SOARES HUB CRM - Instagram Service Requirements
+# Microserviço para prospecção e automação Instagram
+
+fastapi==0.104.1
+uvicorn==0.24.0
+instagrapi==1.17.4
+supabase==2.3.1
+python-dotenv==1.0.0
+pydantic==2.5.0
+httpx==0.25.1

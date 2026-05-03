@@ -9,16 +9,19 @@ import {
   AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
-  BarChart3
+  BarChart3,
+  LogOut
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useToast } from '../contexts/ToastContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
+import { useAuth } from '../contexts/AuthContext'
 import { FunnelPerformanceChart, WeeklyComparisonChart, PipelineStageChart, AgentDistributionChart } from '../components/Charts'
 
 const Dashboard: React.FC = () => {
   const { showSuccess, showInfo } = useToast()
   const theme = useThemeClasses()
+  const { user, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<'overview' | 'agents'>('overview')
 
   const stats = [
@@ -44,7 +47,7 @@ const Dashboard: React.FC = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h2 className={`text-3xl font-black ${theme.textPrimary} tracking-tight`}>Dashboard</h2>
-            <p className={theme.textMuted}>Bem-vindo de volta, Nelson.</p>
+            <p className={theme.textMuted}>Bem-vindo de volta, {user?.email || 'Nelson'}.</p>
           </div>
           <div className="flex gap-3">
             {/* Tab switcher */}
@@ -52,13 +55,13 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                  activeTab === 'overview' ? 'bg-emerald-500 text-slate-950' : `${theme.textMuted} hover:${theme.textPrimary}`
+                  activeTab === 'overview' ? `${theme.accentBg} text-slate-950` : `${theme.textMuted} hover:${theme.textPrimary}`
                 }`}
               >Visão Geral</button>
               <button
                 onClick={() => setActiveTab('agents')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                  activeTab === 'agents' ? 'bg-emerald-500 text-slate-950' : `${theme.textMuted} hover:${theme.textPrimary}`
+                  activeTab === 'agents' ? `${theme.accentBg} text-slate-950` : `${theme.textMuted} hover:${theme.textPrimary}`
                 }`}
               ><Bot size={14} /> Agentes IA</button>
             </div>
@@ -67,6 +70,13 @@ const Dashboard: React.FC = () => {
               className={`${theme.bgCardSolid} ${theme.border} border px-4 py-2 rounded-xl ${theme.textSecondary} font-medium ${theme.bgHover} transition-colors`}
             >
               Exportar
+            </button>
+            <button 
+              onClick={() => signOut()}
+              className={`${theme.bgCardSolid} ${theme.border} border px-4 py-2 rounded-xl ${theme.textSecondary} font-medium ${theme.bgHover} transition-colors flex items-center gap-2`}
+            >
+              <LogOut size={16} />
+              Sair
             </button>
           </div>
         </header>
@@ -111,7 +121,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="h-[280px]">
+                <div>
                   <FunnelPerformanceChart />
                 </div>
               </div>
@@ -122,7 +132,7 @@ const Dashboard: React.FC = () => {
                   <BarChart3 className="text-emerald-500" size={18} />
                   Semanal
                 </h3>
-                <div className="h-[280px]">
+                <div>
                   <WeeklyComparisonChart />
                 </div>
               </div>
@@ -213,7 +223,7 @@ const Dashboard: React.FC = () => {
                   <Bot className="text-emerald-500" size={18} />
                   Distribuição de Agentes
                 </h3>
-                <div className="h-[200px]">
+                <div>
                   <AgentDistributionChart />
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4">
@@ -238,7 +248,7 @@ const Dashboard: React.FC = () => {
                   <Zap className="text-emerald-500" size={18} />
                   Saúde do Pipeline
                 </h3>
-                <div className="h-[280px]">
+                <div>
                   <PipelineStageChart />
                 </div>
               </div>

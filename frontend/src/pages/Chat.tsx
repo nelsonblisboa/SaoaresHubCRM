@@ -1,195 +1,265 @@
-import React from 'react'
+/**
+ * SOARES HUB CRM - Chat Page
+ * Chat em tempo real com suporte a IA, Handover e arquivos
+ * Latência < 5 segundos (crítico)
+ */
+
+import React, { useState, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { 
-  Search,
-  MoreVertical,
-  Send,
-  Paperclip,
-  Smile,
+  ArrowLeft, 
+  Send, 
+  Bot, 
+  User, 
+  UserCheck,
+  AlertTriangle,
   Phone,
-  Video,
-  Info,
-  Circle,
-  Zap
+  MessageSquare,
+  MoreVertical
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
-import { useToast } from '../contexts/ToastContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
+import { useChat } from '../hooks/useChat'
+import { MessageBubble } from '../components/MessageBubble'
+import { useAuth } from '../contexts/AuthContext'
 
 const Chat: React.FC = () => {
-  const { showSuccess, showInfo } = useToast()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const theme = useThemeClasses()
-  const contacts = [
-    { name: 'Ana Clara Silva', lastMsg: 'Qual o valor da entrada?', time: '10:42', active: true, online: true, unread: 2 },
-    { name: 'Roberto Carlos', lastMsg: 'Vou enviar os documentos.', time: '09:15', online: true },
-    { name: 'Marcos Paulo', lastMsg: 'Pode me ligar mais tarde?', time: 'Ontem' },
-    { name: 'Juliana Lima', lastMsg: 'Obrigada pelo retorno!', time: 'Ontem' },
-  ]
+  const { profile } = useAuth()
+  
+  const [inputMessage, setInputMessage] = useState('')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  
+  const {
+    messages,
+    conversation,
+    loading,
+    sending,
+    sendMessage,
+    takeOver,
+    messagesEndRef,
+  } = useChat(id)
 
-  const messages = [
-    { text: 'Olá Ana! Sou o assistente IA do Soares Hub. Como posso te ajudar hoje?', type: 'ai', time: '10:30' },
-    { text: 'Oi! Tenho interesse no imóvel de alto padrão que vi no anúncio.', type: 'user', time: '10:35' },
-    { text: 'Excelente escolha! Esse imóvel possui 4 suítes e vista definitiva para o mar. Qual o valor da entrada que você planeja?', type: 'ai', time: '10:36' },
-    { text: 'Qual o valor da entrada?', type: 'user', time: '10:42' },
-  ]
+  // Handler para enviar mensagem
+  const handleSend = async () => {
+    if (!inputMessage.trim() || sending) return
+    
+    const messageToSend = inputMessage.trim()
+    setInputMessage('')
+    
+    // Focar no input
+    setTimeout(() => inputRef.current?.focus(), 0)
+    
+    await sendMessage(messageToSend)
+  }
+
+  // Handler para Enter (sem Shift)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className={`flex h-screen ${theme.bgMain} font-sans ${theme.textSecondary} overflow-hidden`}>
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" />
+            <p className={theme.textMuted}>Carregando conversa...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Conversa não encontrada
+  if (!conversation) {
+    return (
+      <div className={`flex h-screen ${theme.bgMain} font-sans ${theme.textSecondary} overflow-hidden`}>
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <MessageSquare size={48} className={`mx-auto mb-4 ${theme.textMuted}`} />
+            <p className={`text-lg font-bold ${theme.textPrimary} mb-2`}>
+              Conversa não encontrada
+            </p>
+            <button
+              onClick={() => navigate('/conversations')}
+              className="text-emerald-500 hover:underline text-sm"
+            >
+              Voltar para conversas
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const isAiActive = conversation.isAiActive
+  const status = conversation.status
+  const contactName = conversation.contact?.name || 'Lead'
+  const contactPhone = conversation.contact?.phoneNumber
+  const contactInstagram = conversation.contact?.instagramUsername
 
   return (
     <div className={`flex h-screen ${theme.bgMain} font-sans ${theme.textSecondary} overflow-hidden`}>
       <Sidebar />
 
-      {/* Conversations List Panel */}
-      <div className={`w-80 ${theme.bgCard} ${theme.border} border-r flex flex-col shrink-0`}>
-        <div className="p-6 pb-4">
-          <h2 className={`text-xl font-bold ${theme.textPrimary} mb-4`}>Conversas</h2>
-          <div className="relative">
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme.textMuted}`} size={16} />
-            <input 
-              type="text" 
-              placeholder="Buscar chat..."
-              className={`w-full bg-slate-800/50 border border-slate-700 pl-10 pr-4 py-2 rounded-xl text-xs focus:ring-1 focus:ring-emerald-500 outline-none`}
-            />
-          </div>
-        </div>
+      <main className={`flex-1 flex flex-col ${theme.bgMain}`}>
+        {/* Header da Conversa */}
+        <header className={`${theme.bgCard} border-b ${theme.border} px-6 py-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/conversations')}
+                className={`p-2 rounded-lg ${theme.bgHover} transition-colors`}
+              >
+                <ArrowLeft size={20} className={theme.textMuted} />
+              </button>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          {contacts.map((c, i) => (
-            <div 
-              key={i} 
-              className={`p-4 flex items-center gap-4 cursor-pointer border-b ${theme.border} transition-colors ${
-                c.active ? 'bg-emerald-500/10 border-r-2 border-r-emerald-500' : 'hover:bg-slate-800/30'
-              }`}
-            >
-              <div className="relative">
-                <div className={`w-12 h-12 rounded-full bg-slate-800 border border-slate-700`} />
-                {c.online && <div className={`absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 ${theme.bgMain}`} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-0.5">
-                  <h4 className={`text-sm font-bold ${theme.textPrimary} truncate`}>{c.name}</h4>
-                  <span className={`text-[10px] ${theme.textMuted}`}>{c.time}</span>
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  status === 'AGUARDANDO_HUMANO' 
+                    ? 'bg-amber-500/20 text-amber-400' 
+                    : isAiActive 
+                      ? 'bg-emerald-500/20 text-emerald-400' 
+                      : 'bg-slate-700 text-slate-300'
+                }`}>
+                  {status === 'AGUARDANDO_HUMANO' ? (
+                    <AlertTriangle size={20} />
+                  ) : isAiActive ? (
+                    <Bot size={20} />
+                  ) : (
+                    <User size={20} />
+                  )}
                 </div>
-                <p className={`text-xs ${theme.textMuted} truncate`}>{c.lastMsg}</p>
+
+                {/* Info do Contato */}
+                <div>
+                  <h2 className={`font-bold ${theme.textPrimary}`}>{contactName}</h2>
+                  <div className={`flex items-center gap-3 text-xs ${theme.textMuted}`}>
+                    {contactPhone && (
+                      <span className="flex items-center gap-1">
+                        <Phone size={12} />
+                        {contactPhone}
+                      </span>
+                    )}
+                    {contactInstagram && (
+                      <span>@{contactInstagram}</span>
+                    )}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      status === 'AGUARDANDO_HUMANO' 
+                        ? 'bg-amber-500/20 text-amber-400' 
+                        : status === 'ATIVA'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-slate-500/20 text-slate-400'
+                    }`}>
+                      {status === 'AGUARDANDO_HUMANO' ? '⚠️ Aguardando Humano' : 
+                       status === 'ATIVA' ? '✅ Ativa' : '🔒 Fechada'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              {c.unread && (
-                <div className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center">
-                  {c.unread}
+            </div>
+
+            {/* Ações */}
+            <div className="flex items-center gap-2">
+              {/* Botão Assumir (apenas se IA ativa ou aguardando humano) */}
+              {(isAiActive || status === 'AGUARDANDO_HUMANO') && (
+                <button
+                  onClick={takeOver}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                >
+                  <UserCheck size={16} />
+                  Assumir
+                </button>
+              )}
+
+              {/* Lead Info */}
+              {conversation.lead && (
+                <div className={`px-3 py-1.5 rounded-xl ${theme.bgCardSolid} ${theme.border} border text-xs`}>
+                  <span className={`font-bold ${
+                    conversation.lead.temperature === 'QUENTE' ? 'text-orange-400' :
+                    conversation.lead.temperature === 'MORNO' ? 'text-amber-400' : 'text-blue-400'
+                  }`}>
+                    {conversation.lead.temperature}
+                  </span>
+                  <span className="mx-2">|</span>
+                  <span className={theme.textMuted}>
+                    Score: {conversation.lead.score}/10
+                  </span>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Main Chat Window */}
-      <main className={`flex-1 flex flex-col ${theme.bgMain} relative`}>
-        <header className={`p-6 border-b ${theme.border} flex justify-between items-center ${theme.bgMain}/80 backdrop-blur-md z-10`}>
-          <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-full bg-slate-800 border border-slate-700`} />
-            <div>
-              <h3 className={`font-bold ${theme.textPrimary}`}>Ana Clara Silva</h3>
-              <div className="flex items-center gap-2">
-                <Circle size={8} className="fill-emerald-500 text-emerald-500" />
-                <span className={`text-[10px] ${theme.textMuted} uppercase font-bold tracking-widest`}>IA Ativa • Qualificando</span>
-              </div>
+              <button className={`p-2 rounded-lg ${theme.bgHover} transition-colors`}>
+                <MoreVertical size={20} className={theme.textMuted} />
+              </button>
             </div>
-          </div>
-          <div className={`flex items-center gap-4 ${theme.textMuted}`}>
-            <button 
-              onClick={() => showInfo('Chamada de voz em desenvolvimento')}
-              className="hover:text-emerald-400 transition-colors"
-            ><Phone size={20} /></button>
-            <button 
-              onClick={() => showInfo('Videochamada em desenvolvimento')}
-              className="hover:text-emerald-400 transition-colors"
-            ><Video size={20} /></button>
-            <button 
-              onClick={() => showInfo('Informações do contato')}
-              className="hover:text-emerald-400 transition-colors"
-            ><Info size={20} /></button>
-            <button 
-              onClick={() => showInfo('Mais opções')}
-              className="hover:text-emerald-400 transition-colors"
-            ><MoreVertical size={20} /></button>
           </div>
         </header>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-hide">
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] space-y-1`}>
-                <div className={`p-4 rounded-2xl relative ${
-                  m.type === 'user' 
-                    ? `bg-slate-800 ${theme.textPrimary} rounded-tr-none shadow-sm` 
-                    : 'bg-emerald-500/10 border border-emerald-500/20 text-slate-200 rounded-tl-none'
-                }`}>
-                  {m.type === 'ai' && (
-                    <span className="absolute -top-6 left-0 text-[10px] font-black text-emerald-500 tracking-widest flex items-center gap-1 uppercase">
-                      <Zap size={10} /> Soares Hub AI
-                    </span>
-                  )}
-                  <p className="text-sm leading-relaxed">{m.text}</p>
-                </div>
-                <p className={`text-[10px] text-slate-600 ${m.type === 'user' ? 'text-right' : 'text-left'}`}>
-                  {m.time}
-                </p>
-              </div>
+        {/* Área de Mensagens */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className={theme.textMuted}>Nenhuma mensagem ainda</p>
             </div>
-          ))}
-          
-          {/* AI Typing Indicator */}
-          <div className="flex justify-start">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl rounded-tl-none flex items-center gap-2">
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">IA processando...</span>
-            </div>
-          </div>
+          ) : (
+            messages.map((msg, idx) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isLast={idx === messages.length - 1}
+              />
+            ))
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className={`p-6 ${theme.bgMain}`}>
-          <div className={`${theme.bgCard} ${theme.border} rounded-3xl p-2 flex items-center gap-2 shadow-2xl`}>
-            <button 
-              onClick={() => showInfo('Anexo em desenvolvimento')}
-              className={`p-3 ${theme.textMuted} hover:text-emerald-500 transition-colors`}
-            >
-              <Paperclip size={20} />
-            </button>
-            <input 
-              type="text" 
-              placeholder="Digite uma mensagem ou deixe a IA responder..."
-              className={`flex-1 bg-transparent border-none outline-none text-sm ${theme.textPrimary} px-2`}
-            />
-            <button 
-              onClick={() => showInfo('Emojis em desenvolvimento')}
-              className={`p-3 ${theme.textMuted} hover:text-emerald-500 transition-colors`}
-            >
-              <Smile size={20} />
-            </button>
-            <button 
-              onClick={() => showSuccess('Mensagem enviada!')}
-              className="bg-emerald-500 text-slate-950 p-3 rounded-2xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-          <div className="mt-4 flex justify-center">
-            <div className={`${theme.bgCard} ${theme.border} px-4 py-2 rounded-full flex items-center gap-3`}>
-              <span className={`text-[10px] ${theme.textMuted} uppercase font-bold tracking-widest`}>Modo Ativo:</span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => showSuccess('Modo IA Piloto ativado')}
-                  className="text-[10px] px-3 py-1 rounded-full bg-emerald-500 text-slate-950 font-black uppercase"
-                >IA Piloto</button>
-                <button 
-                  onClick={() => showSuccess('Modo Manual ativado')}
-                  className={`text-[10px] px-3 py-1 rounded-full bg-slate-800 ${theme.textMuted} font-black uppercase hover:${theme.textPrimary} transition-colors`}
-                >Manual</button>
-              </div>
+        {/* Input de Mensagem */}
+        <div className={`${theme.bgCard} border-t ${theme.border} p-4`}>
+          {/* Alerta de Handover */}
+          {status === 'AGUARDANDO_HUMANO' && isAiActive && (
+            <div className="mb-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+              <AlertTriangle className="text-amber-400 flex-shrink-0" size={18} />
+              <p className="text-sm text-amber-400">
+                <strong>IA desativada.</strong> Esta conversa está aguardando atendimento humano.
+              </p>
             </div>
+          )}
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  status === 'AGUARDANDO_HUMANO' && !isAiActive
+                    ? 'Conversa aguardando humano...'
+                    : 'Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)'
+                }
+                disabled={sending || (status === 'AGUARDANDO_HUMANO' && !isAiActive)}
+                rows={1}
+                className={`w-full px-4 py-3 ${theme.bgCardSolid} ${theme.border} border rounded-2xl ${theme.textPrimary} placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none resize-none text-sm`}
+                style={{ minHeight: '44px', maxHeight: '120px' }}
+              />
+            </div>
+            <button
+              onClick={handleSend}
+              disabled={!inputMessage.trim() || sending}
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 rounded-2xl transition-colors"
+            >
+              <Send size={18} />
+            </button>
           </div>
         </div>
       </main>

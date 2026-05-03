@@ -54,11 +54,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.style.setProperty('--accent-color', accentColor)
   }, [isDarkMode, accentColor, isHighContrast])
 
-  const toggleTheme = () => setIsDarkMode(prev => !prev)
+  const toggleTheme = () => setIsDarkMode((prev: boolean) => !prev)
   
   const setAccentColor = (color: string) => setAccentColorState(color)
   
-  const toggleHighContrast = () => setIsHighContrast(prev => !prev)
+  const toggleHighContrast = () => setIsHighContrast((prev: boolean) => !prev)
 
   return (
     <ThemeContext.Provider value={{

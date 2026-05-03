@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { 
   Search,
   Plus,
@@ -8,48 +8,79 @@ import {
 import Sidebar from '../components/Sidebar'
 import { useToast } from '../contexts/ToastContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
-
-interface Lead {
-  id: number
-  name: string
-  value: string
-  temp: 'QUENTE' | 'MORNO' | 'FRIO'
-  channel: string
-  interest: string
-  column: string
-}
+import { supabase } from '../lib/supabaseClient'
+import { supabaseService, Lead } from '../services/supabaseService'
+import { useAuth } from '../contexts/AuthContext'
 
 const COLUMNS = [
-  { id: 'prospeccao',   title: 'Prospecção' },
-  { id: 'qualificacao', title: 'Qualificação' },
-  { id: 'proposta',     title: 'Proposta' },
-  { id: 'negociacao',   title: 'Negociação' },
-  { id: 'fechamento',   title: 'Fechamento' },
-]
-
-const INITIAL_LEADS: Lead[] = [
-  { id: 1, name: 'Ana Clara Silva',  value: 'R$ 15.000', temp: 'QUENTE', channel: 'WhatsApp', interest: 'Imóvel Alto Padrão', column: 'prospeccao' },
-  { id: 2, name: 'Roberto Carlos',   value: 'R$ 42.000', temp: 'QUENTE', channel: 'Instagram', interest: 'Consultoria',       column: 'prospeccao' },
-  { id: 3, name: 'Marcos Paulo',     value: 'R$ 8.500',  temp: 'MORNO',  channel: 'WhatsApp', interest: 'Consultoria',       column: 'prospeccao' },
-  { id: 4, name: 'Juliana Lima',     value: 'R$ 25.000', temp: 'FRIO',   channel: 'WhatsApp', interest: 'Consultoria',       column: 'prospeccao' },
+  { id: 'NOVO',           title: 'Novo',           color: 'bg-blue-500' },
+  { id: 'QUALIFICADO',   title: 'Qualificado',     color: 'bg-amber-500' },
+  { id: 'PROPOSTA',      title: 'Proposta',       color: 'bg-orange-500' },
+  { id: 'NEGOCIACAO',   title: 'Negociação',     color: 'bg-rose-500' },
+  { id: 'GANHO',         title: 'Ganho',          color: 'bg-emerald-500' },
 ]
 
 const Kanban: React.FC = () => {
   const { showSuccess, showInfo } = useToast()
   const theme = useThemeClasses()
-
-  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS)
+  const { profile } = useAuth()
+  
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
-  const [draggingId, setDraggingId] = useState<number | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const dragLeadId = useRef<number | null>(null)
+  const dragLeadId = useRef<string | null>(null)
 
-  /* ── Drag handlers ── */
-  const handleDragStart = (e: React.DragEvent, leadId: number) => {
+  useEffect(() => {
+    if (!profile?.organization_id) return
+    
+    fetchLeads()
+    const channel = supabase
+      .channel('leads-kanban')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'leads',
+        filter: `organization_id=eq.${profile.organization_id}` // Filtrar por organização
+      }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          const updatedLead = payload.new as Lead
+          setLeads(prev => {
+            const exists = prev.find(l => l.id === updatedLead.id)
+            if (exists) {
+              return prev.map(l => l.id === updatedLead.id ? updatedLead : l)
+            }
+            return [...prev, updatedLead]
+          })
+        } else if (payload.eventType === 'DELETE') {
+          setLeads(prev => prev.filter(l => l.id !== (payload.old as Lead).id))
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [profile?.organization_id])
+
+  const fetchLeads = async () => {
+    try {
+      setLoading(true)
+      const data = await supabaseService.fetchLeads(profile?.organization_id || '')
+      setLeads(data || [])
+    } catch (error: any) {
+      showInfo(error.message || 'Erro ao carregar leads')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /* ── Drag Handlers ── */
+  const handleDragStart = (e: React.DragEvent, leadId: string) => {
     dragLeadId.current = leadId
     setDraggingId(leadId)
     e.dataTransfer.effectAllowed = 'move'
-    // small delay so the ghost image renders before the element fades
     setTimeout(() => {}, 0)
   }
 
@@ -66,48 +97,76 @@ const Kanban: React.FC = () => {
   }
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // only clear if leaving the column container itself
     if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
       setDragOverColumn(null)
     }
   }
 
-  const handleDrop = (e: React.DragEvent, targetColumn: string) => {
+  const handleDrop = async (e: React.DragEvent, targetStage: string) => {
     e.preventDefault()
     const id = dragLeadId.current
-    if (id === null) return
-
-    setLeads(prev => {
-      const lead = prev.find(l => l.id === id)
-      if (!lead || lead.column === targetColumn) return prev
-      showSuccess(`${lead.name} movido para ${COLUMNS.find(c => c.id === targetColumn)?.title}`)
-      return prev.map(l => l.id === id ? { ...l, column: targetColumn } : l)
-    })
-
-    setDragOverColumn(null)
-    setDraggingId(null)
-    dragLeadId.current = null
+    if (!id) return
+    
+    const lead = leads.find(l => l.id === id)
+    if (!lead || lead.stage === targetStage) return
+    
+    // Salvar estado anterior para rollback
+    const previousLeads = [...leads]
+    const previousStage = lead.stage
+    
+    try {
+      // Optimistic update - atualizar UI imediatamente
+      setLeads(prev => prev.map(l => 
+        l.id === id ? { ...l, stage: targetStage as Lead['stage'] } : l
+      ))
+      
+      // Fazer requisição
+      await supabaseService.updateLead(id, { stage: targetStage as Lead['stage'] })
+      showSuccess(`Lead movido para ${COLUMNS.find(c => c.id === targetStage)?.title}`)
+    } catch (error: any) {
+      // Rollback - reverter para estado anterior
+      setLeads(previousLeads)
+      showInfo(error.message || 'Erro ao atualizar lead')
+    } finally {
+      setDragOverColumn(null)
+      setDraggingId(null)
+      dragLeadId.current = null
+    }
   }
 
   /* ── Helpers ── */
-  const leadsInColumn = (colId: string) =>
-    leads.filter(l => l.column === colId && (
+  const leadsInColumn = (stage: string) =>
+    leads.filter(l => l.stage === stage && (
       searchQuery === '' ||
-      l.name.toLowerCase().includes(searchQuery.toLowerCase())
+      l.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (l.contact?.name && l.contact.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (l.contact?.phone_number && l.contact.phone_number.includes(searchQuery)) ||
+      (l.contact?.instagram_username && l.contact.instagram_username.toLowerCase().includes(searchQuery.toLowerCase()))
     ))
 
   const tempStyle = (temp: string) =>
     temp === 'QUENTE' ? 'bg-orange-500/20 text-orange-500' :
-    temp === 'MORNO'  ? 'bg-amber-500/20 text-amber-500'  :
-                        'bg-blue-500/20 text-blue-500'
+    temp === 'MORNO'  ? 'bg-amber-500/20 text-amber-500' :
+    'bg-blue-500/20 text-blue-500'
 
   const tempLabel = (temp: string) =>
     temp === 'QUENTE' ? '🔥 QUENTE' : temp === 'MORNO' ? '🌡️ MORNO' : '❄️ FRIO'
 
+  if (loading) {
+    return (
+      <div className={`flex h-screen ${theme.bgMain} font-sans ${theme.textSecondary} overflow-hidden`}>
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <p className={theme.textMuted}>Carregando pipeline...</p>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className={`flex h-screen ${theme.bgMain} font-sans ${theme.textSecondary} overflow-hidden`}>
       <Sidebar />
-
+      
       <main className={`flex-1 flex flex-col ${theme.bgMain} overflow-hidden`}>
         {/* Header */}
         <header className="p-8 pb-4 flex justify-between items-center">
@@ -192,7 +251,7 @@ const Kanban: React.FC = () => {
                       draggable
                       onDragStart={e => handleDragStart(e, lead.id)}
                       onDragEnd={handleDragEnd}
-                      onClick={() => showSuccess(`Lead ${lead.name} selecionado`)}
+                      onClick={() => showSuccess(`Lead "${lead.contact?.name || lead.id}" selecionado`)}
                       className={`
                         ${theme.bgCardSolid} ${theme.border} border p-4 rounded-2xl
                         ${theme.borderHover} transition-all cursor-grab active:cursor-grabbing
@@ -201,15 +260,21 @@ const Kanban: React.FC = () => {
                       `}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${tempStyle(lead.temp)}`}>
-                          {tempLabel(lead.temp)}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${tempStyle(lead.temperature)}`}>
+                          {tempLabel(lead.temperature)}
                         </span>
-                        <span className={`text-[10px] ${theme.textMuted} font-medium`}>{lead.channel}</span>
+                        <span className={`text-[10px] ${theme.textMuted} font-medium`}>Score: {lead.score}</span>
                       </div>
-                      <h4 className={`font-bold ${theme.textPrimary} group-hover:text-emerald-400 transition-colors mb-1`}>{lead.name}</h4>
-                      <p className={`text-xs ${theme.textMuted} mb-3`}>Interesse em {lead.interest}</p>
+<h4 className={`font-bold ${theme.textPrimary} group-hover:text-emerald-400 transition-colors mb-1`}>
+                          {lead.contact?.name || `Lead ${lead.id.slice(0, 8)}`}
+                        </h4>
+                      <p className={`text-xs ${theme.textMuted} mb-3`}>
+                        Estágio: {lead.stage} | Temp: {lead.temperature}
+                      </p>
                       <div className={`flex justify-between items-center pt-3 border-t ${theme.border}`}>
-                        <span className={`text-sm font-black ${theme.textPrimary} italic`}>{lead.value}</span>
+                        <span className={`text-sm font-black ${theme.textPrimary} italic`}>
+                          Score: {lead.score}/10
+                        </span>
                         <div className={`w-6 h-6 rounded-full ${theme.bgButton} ${theme.border} border`} />
                       </div>
                     </div>

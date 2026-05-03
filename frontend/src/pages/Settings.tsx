@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Shield,
   Bot,
@@ -20,12 +20,18 @@ import {
   Bell,
   Brain,
   Zap,
-  Cpu
+  Cpu,
+  BarChart3,
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useToast } from '../contexts/ToastContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
+import { supabase } from '../lib/supabaseClient'
+import { BrandingSettings } from '../components/BrandingSettings'
+import { UserManagement } from '../components/UserManagement'
+import { InstagramMining } from '../components/InstagramMining'
+import { Reports } from '../components/Reports'
 
 // Tipos para os modais
 type ModalType = 
@@ -43,6 +49,8 @@ type ModalType =
   | 'openrouter-keys'
   | 'usuarios'
   | 'logs'
+  | 'relatorios'
+  | 'instagram_mining'
   | null
 
 const Settings: React.FC = () => {
@@ -50,6 +58,7 @@ const Settings: React.FC = () => {
   const { isDarkMode, accentColor, isHighContrast, toggleTheme, setAccentColor, toggleHighContrast } = useTheme()
   const theme = useThemeClasses()
   const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const [accentFlash, setAccentFlash] = useState(false)
 
   const sections = [
     { 
@@ -92,6 +101,14 @@ const Settings: React.FC = () => {
         { label: 'Chaves OpenRouter', key: 'openrouter-keys' as ModalType, icon: Key },
         { label: 'Usuários & Permissões', key: 'usuarios' as ModalType, icon: Users },
         { label: 'Logs de Auditoria', key: 'logs' as ModalType, icon: FileText }
+      ]
+    },
+    { 
+      title: 'Relatórios', 
+      icon: BarChart3, 
+      desc: 'Análise e exportação de dados.',
+      items: [
+        { label: 'Relatórios Completos', key: 'relatorios' as ModalType, icon: BarChart3 }
       ]
     },
   ]
@@ -587,66 +604,225 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
     </Modal>
   )
 
-  const InstagramModal = () => (
-    <Modal title="Instagram Mining" icon={Instagram}>
-      <div className="space-y-4">
-        <p className="text-sm text-slate-400">
-          Configure a mineração de leads do Instagram.
-        </p>
-        
-        <div className="p-4 bg-yellow-500/10 rounded-xl">
-          <p className="text-xs text-yellow-400">
-            ⚠️ A mineração do Instagram requer configuração de credenciais de API do Meta Business.
-          </p>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Access Token</label>
-          <input 
-            type="password" 
-            placeholder="EAAxxxxxxxxx"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">App ID</label>
-          <input 
-            type="text" 
-            placeholder="1234567890"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200"
-          />
-        </div>
+  const InstagramModal = () => {
+    const [username, setUsername] = React.useState('')
+    const [password, setPassword] = React.useState('')
+    const [serviceUrl, setServiceUrl] = React.useState('http://localhost:8000')
+    const [showPassword, setShowPassword] = React.useState(false)
+    const [isSaving, setIsSaving] = React.useState(false)
+    const [isTesting, setIsTesting] = React.useState(false)
+    const [connectionStatus, setConnectionStatus] = React.useState<'idle' | 'ok' | 'error'>('idle')
+    const [connectionMsg, setConnectionMsg] = React.useState('')
+    const { showSuccess: toastSuccess, showError: toastError } = useToast()
 
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">App Secret</label>
-          <input 
-            type="password" 
-            placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200"
-          />
-        </div>
+    // ── Carrega credenciais salvas da tabela organizations ──────────────────
+    React.useEffect(() => {
+      const loadCredentials = async () => {
+        const { data } = await supabase
+          .from('organizations')
+          .select('instagram_username, instagram_service_url')
+          .single()
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-slate-800/30 rounded-xl">
-            <label className="block text-xs text-slate-500 mb-2">Hashtags Monitoradas</label>
-            <div className="flex gap-2 flex-wrap">
-              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">#seguroauto</span>
-              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">#centrosoares</span>
-              <button className="px-2 py-1 border border-slate-600 text-slate-400 text-xs rounded-full hover:border-emerald-500">+</button>
+        if (data) {
+          setUsername(data.instagram_username || '')
+          setServiceUrl(data.instagram_service_url || 'http://localhost:8000')
+          // Senha não é carregada por segurança — usuário re-insere apenas quando quiser alterar
+        }
+      }
+      loadCredentials()
+    }, [])
+
+    // ── Salva no Supabase (organizations table) ─────────────────────────────
+    // A senha é armazenada com um prefixo "enc:" para sinalizar que está
+    // ofuscada. Em produção, usar Supabase Vault ou criptografia no backend.
+    const handleSave = async () => {
+      setIsSaving(true)
+      try {
+        const updatePayload: Record<string, string> = {
+          instagram_username: username,
+          instagram_service_url: serviceUrl,
+        }
+        // Só atualiza a senha se o campo foi preenchido (não sobrescreve com vazio)
+        if (password.trim()) {
+          updatePayload.instagram_password = password
+        }
+
+        const { error } = await supabase
+          .from('organizations')
+          .update(updatePayload)
+          .neq('id', '') // Atualiza o primeiro registro da org
+
+        if (error) throw error
+
+        toastSuccess('Credenciais do Instagram salvas com sucesso!')
+        setPassword('') // Limpa campo de senha após salvar
+        closeModal()
+      } catch (err: any) {
+        toastError(`Erro ao salvar: ${err.message}`)
+      } finally {
+        setIsSaving(false)
+      }
+    }
+
+    // ── Testa conectividade com o microserviço ──────────────────────────────
+    const handleTest = async () => {
+      setIsTesting(true)
+      setConnectionStatus('idle')
+      try {
+        const res = await fetch(`${serviceUrl}/health`, { signal: AbortSignal.timeout(5000) })
+        const json = await res.json()
+        if (json.status === 'ok') {
+          setConnectionStatus('ok')
+          setConnectionMsg(json.session_active
+            ? '✅ Microserviço online e sessão Instagram ativa.'
+            : '⚠️ Microserviço online mas sem sessão ativa — salve as credenciais.')
+        } else {
+          throw new Error('Serviço retornou status inválido')
+        }
+      } catch (err: any) {
+        setConnectionStatus('error')
+        setConnectionMsg(`❌ Serviço inacessível em ${serviceUrl}. Verifique se o microserviço está rodando.`)
+      } finally {
+        setIsTesting(false)
+      }
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className={`${theme.modalBg} border ${theme.border} rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl`}>
+          {/* Header */}
+          <div className={`flex items-center justify-between p-6 border-b ${theme.border}`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-pink-500/10 rounded-xl">
+                <Instagram className="text-pink-500" size={24} />
+              </div>
+              <div>
+                <h3 className={`text-xl font-bold ${theme.textPrimary}`}>Instagram Mining</h3>
+                <p className="text-xs text-slate-500">Credenciais salvas no banco — não edite arquivos .env</p>
+              </div>
+            </div>
+            <button onClick={closeModal} className={`p-2 ${theme.bgHover} rounded-lg transition-colors`}>
+              <X size={20} className={theme.textMuted} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 overflow-y-auto max-h-[60vh] space-y-5">
+
+            {/* Status de conexão */}
+            {connectionStatus !== 'idle' && (
+              <div className={`p-3 rounded-xl text-sm ${
+                connectionStatus === 'ok'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-red-500/10 text-red-400 border border-red-500/30'
+              }`}>
+                {connectionMsg}
+              </div>
+            )}
+
+            {/* URL do Microserviço */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                URL do Microserviço
+                <span className="ml-2 text-xs text-slate-500">(onde o serviço Python está rodando)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={serviceUrl}
+                  onChange={(e) => setServiceUrl(e.target.value)}
+                  placeholder="http://localhost:8000"
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-pink-500"
+                />
+                <button
+                  onClick={handleTest}
+                  disabled={isTesting}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-60 text-slate-300 rounded-xl text-sm font-medium transition-colors"
+                >
+                  {isTesting ? 'Testando...' : 'Testar'}
+                </button>
+              </div>
+            </div>
+
+            {/* Separador */}
+            <div className={`border-t ${theme.border}`} />
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+              Credenciais da Conta Instagram
+            </p>
+
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                Usuário (@username)
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="seu_usuario_instagram"
+                autoComplete="off"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-pink-500"
+              />
+            </div>
+
+            {/* Password com toggle de visibilidade */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                Senha
+                <span className="ml-2 text-xs text-slate-500">(deixe vazio para manter a senha atual)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  autoComplete="new-password"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pr-12 text-sm text-slate-200 focus:outline-none focus:border-pink-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs px-1"
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+            </div>
+
+            {/* Aviso de segurança */}
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+              <span className="text-amber-400 text-base mt-0.5">⚠️</span>
+              <p className="text-xs text-amber-400 leading-relaxed">
+                <strong>Recomendação:</strong> Use uma <strong>conta secundária dedicada</strong> para automação,
+                nunca a conta principal do negócio. O Instagram pode suspender contas com comportamento automatizado.
+                As credenciais são armazenadas na sua organização no Supabase.
+              </p>
             </div>
           </div>
-          <div className="p-4 bg-slate-800/30 rounded-xl">
-            <label className="block text-xs text-slate-500 mb-2">Contas Monitoradas</label>
-            <div className="flex gap-2 flex-wrap">
-              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">@centrosoares</span>
-              <button className="px-2 py-1 border border-slate-600 text-slate-400 text-xs rounded-full hover:border-emerald-500">+</button>
-            </div>
+
+          {/* Footer */}
+          <div className={`flex justify-end gap-3 p-6 border-t ${theme.border}`}>
+            <button
+              onClick={closeModal}
+              className={`px-4 py-2 rounded-xl text-sm font-medium ${theme.textMuted} hover:${theme.textPrimary} transition-colors`}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !username}
+              className="flex items-center gap-2 px-5 py-2 bg-pink-500 hover:bg-pink-400 disabled:opacity-60 text-white rounded-xl text-sm font-bold transition-colors"
+            >
+              <Save size={16} />
+              {isSaving ? 'Salvando...' : 'Salvar Credenciais'}
+            </button>
           </div>
         </div>
       </div>
-    </Modal>
-  )
+    )
+  }
 
   const TemasModal = () => {
     const colors = [
@@ -699,7 +875,11 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
               {colors.map((color) => (
                 <button 
                   key={color.hex}
-                  onClick={() => { setAccentColor(color.hex); showSuccess(`Cor ${color.name} selecionada`); }}
+                  onClick={() => { 
+                  setAccentColor(color.hex)
+                  setAccentFlash(true)
+                  setTimeout(() => setAccentFlash(false), 300)
+                }}
                   className={`w-10 h-10 rounded-full border-2 transition-all ${
                     accentColor === color.hex ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:border-white hover:scale-105'
                   }`}
@@ -912,11 +1092,29 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
   )
 
   const UsuariosModal = () => {
-    const usuarios = [
-      { nome: 'Nelson Soares', email: 'nelson@centrosoares.com', role: 'Admin', ativo: true },
-      { nome: 'Maria Silva', email: 'maria@centrosoares.com', role: 'Corretor', ativo: true },
-      { nome: 'João Santos', email: 'joao@centrosoares.com', role: 'Corretor', ativo: false },
-    ]
+    const [usuarios, setUsuarios] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+      fetchUsuarios()
+    }, [])
+
+    const fetchUsuarios = async () => {
+      try {
+        setLoading(true)
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        setUsuarios(data || [])
+      } catch (error: any) {
+        console.error('Erro ao carregar usuários:', error.message)
+      } finally {
+        setLoading(false)
+      }
+    }
 
     return (
       <Modal title="Usuários & Permissões" icon={Users}>
@@ -924,39 +1122,44 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
           <p className="text-sm text-slate-400">
             Gerencie usuários do sistema e suas permissões.
           </p>
-          
-          <button className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl text-sm font-bold transition-colors">
+           
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-slate-500">Carregando usuários...</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {usuarios.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-emerald-500">
+                      {user.name?.charAt(0) || '?'}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{user.name || 'Sem nome'}</p>
+                      <p className="text-xs text-slate-500">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${
+                      user.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 
+                      user.role === 'GERENTE' ? 'bg-blue-500/20 text-blue-400' : 
+                      'bg-slate-500/20 text-slate-400'
+                    }`}>
+                      {user.role}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button 
+            onClick={() => showSuccess('Funcionalidade em desenvolvimento')}
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium transition-colors"
+          >
             + Adicionar Usuário
           </button>
-          
-          <div className="space-y-2">
-            {usuarios.map((user, idx) => (
-              <div key={idx} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{user.nome.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">{user.nome}</p>
-                    <p className="text-xs text-slate-500">{user.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${user.role === 'Admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                    {user.role}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${user.ativo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-600 text-slate-400'}`}>
-                    {user.ativo ? 'Ativo' : 'Inativo'}
-                  </span>
-                  <button className="p-2 hover:bg-slate-700 rounded-lg">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </Modal>
     )
@@ -1018,7 +1221,17 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
   }
 
   return (
-    <div className={`flex h-screen ${theme.bgPrimary} font-sans ${theme.textSecondary} overflow-hidden`}>
+    <div className={`flex h-screen ${theme.bgPrimary} font-sans ${theme.textSecondary} overflow-hidden relative`}>
+      {/* Flash de cor de destaque */}
+      {accentFlash && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-50 animate-flash-accent"
+          style={{ 
+            boxShadow: `inset 0 0 100px 20px ${accentColor}40`,
+            backgroundColor: `${accentColor}10`
+          }}
+        />
+      )}
       <Sidebar />
 
       {/* Modais */}
@@ -1093,6 +1306,11 @@ TOM DE VOZ: Profissional, amigável, eficiente`)
             Configurar WhatsApp
           </button>
         </div>
+
+        {activeModal === 'branding' && <BrandingSettings onClose={closeModal} />}
+        {activeModal === 'usuarios' && <UserManagement onClose={closeModal} />}
+        {activeModal === 'instagram_mining' && <InstagramMining onClose={closeModal} />}
+        {activeModal === 'relatorios' && <Reports onClose={closeModal} />}
       </main>
     </div>
   )

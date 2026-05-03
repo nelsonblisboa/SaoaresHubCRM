@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
     <aside className={`w-64 ${theme.bgSidebar} ${theme.sidebarBorder} border-r backdrop-blur-xl flex flex-col h-screen shrink-0`}>
       <div className="p-6">
         <h1 className={`text-2xl font-black ${theme.textPrimary} tracking-tighter italic`}>SOARES HUB</h1>
-        <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-1">Emerald Sanctuary</p>
+        <p className={`text-[10px] ${theme.accent} font-bold uppercase tracking-widest mt-1`}>CRM Dashboard</p>
       </div>
 
       <nav className="flex-1 px-4 space-y-2">
@@ -42,8 +42,8 @@ const Sidebar: React.FC = () => {
               to={item.path}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
                 isActive
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/20'
-                  : `${theme.textMuted} ${theme.bgHover} hover:text-emerald-500`
+                  ? `${theme.accentBg} text-slate-950 font-bold shadow-lg`
+                  : `${theme.textMuted} ${theme.bgHover} hover:${theme.accent}`
               }`}
             >
               <item.icon size={20} />
@@ -58,8 +58,8 @@ const Sidebar: React.FC = () => {
           to="/settings"
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
             location.pathname === '/settings'
-              ? 'bg-emerald-500 text-slate-950 font-bold shadow-lg shadow-emerald-500/20'
-              : `${theme.textMuted} ${theme.bgHover} hover:text-emerald-500`
+              ? `${theme.accentBg} text-slate-950 font-bold shadow-lg`
+              : `${theme.textMuted} ${theme.bgHover} hover:${theme.accent}`
           }`}
         >
           <Settings size={20} />

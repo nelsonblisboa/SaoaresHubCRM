@@ -1,7 +1,22 @@
 import { useTheme } from '../contexts/ThemeContext'
 
+const getColorClass = (color: string) => {
+  const colorMap: Record<string, { text: string, bg: string, border: string, bgLight: string }> = {
+    '#10b981': { text: 'text-emerald-500', bg: 'bg-emerald-500', border: 'border-emerald-500', bgLight: 'bg-emerald-500/10' },
+    '#3b82f6': { text: 'text-blue-500', bg: 'bg-blue-500', border: 'border-blue-500', bgLight: 'bg-blue-500/10' },
+    '#8b5cf6': { text: 'text-violet-500', bg: 'bg-violet-500', border: 'border-violet-500', bgLight: 'bg-violet-500/10' },
+    '#ec4899': { text: 'text-pink-500', bg: 'bg-pink-500', border: 'border-pink-500', bgLight: 'bg-pink-500/10' },
+    '#f59e0b': { text: 'text-amber-500', bg: 'bg-amber-500', border: 'border-amber-500', bgLight: 'bg-amber-500/10' },
+    '#ef4444': { text: 'text-red-500', bg: 'bg-red-500', border: 'border-red-500', bgLight: 'bg-red-500/10' },
+    '#06b6d4': { text: 'text-cyan-500', bg: 'bg-cyan-500', border: 'border-cyan-500', bgLight: 'bg-cyan-500/10' },
+    '#84cc16': { text: 'text-lime-500', bg: 'bg-lime-500', border: 'border-lime-500', bgLight: 'bg-lime-500/10' },
+  }
+  return colorMap[color.toLowerCase()] || colorMap['#10b981']
+}
+
 export const useThemeClasses = () => {
-  const { isDarkMode } = useTheme()
+  const { isDarkMode, accentColor } = useTheme()
+  const colors = getColorClass(accentColor)
 
   const theme = {
     // Backgrounds
@@ -27,7 +42,13 @@ export const useThemeClasses = () => {
     borderLight: isDarkMode ? 'border-slate-700' : 'border-gray-300',
     borderHover: isDarkMode ? 'hover:border-slate-700' : 'hover:border-gray-300',
     
-    // Cores de status
+    // Cores de destaque (usam a cor selecionada)
+    accent: colors.text,
+    accentBg: colors.bg,
+    accentBorder: colors.border,
+    accentBgLight: colors.bgLight,
+    
+    // Cores de status (mantém originais)
     success: isDarkMode ? 'text-emerald-500' : 'text-emerald-600',
     successBg: isDarkMode ? 'bg-emerald-500/10' : 'bg-emerald-100',
     error: isDarkMode ? 'text-rose-500' : 'text-red-600',
@@ -55,7 +76,7 @@ export const useThemeClasses = () => {
     
     // Ícones
     iconMuted: isDarkMode ? 'text-slate-500' : 'text-gray-400',
-    iconActive: isDarkMode ? 'text-emerald-500' : 'text-emerald-600',
+    iconActive: colors.text,
   }
 
   return theme

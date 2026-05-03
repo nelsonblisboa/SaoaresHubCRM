@@ -1,22 +1,47 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { useToast } from '../contexts/ToastContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
+import { supabase } from '../lib/supabaseClient'
 
 const Login: React.FC = () => {
+  const navigate = useNavigate()
   const { showSuccess, showError } = useToast()
   const theme = useThemeClasses()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) navigate('/')
+    })
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) {
       showError('Preencha todos os campos')
       return
     }
-    // Simulação de login
-    showSuccess('Login realizado com sucesso!')
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      
+      if (error) throw error
+      
+      showSuccess('Login realizado com sucesso!')
+      navigate('/')
+    } catch (err: any) {
+      showError(err.message || 'Erro ao fazer login')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -59,10 +84,11 @@ const Login: React.FC = () => {
             
             <button 
               type="submit"
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold p-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-emerald-500/20"
+              disabled={loading}
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold p-4 rounded-2xl transition-all flex items-center justify-center gap-2 group shadow-lg shadow-emerald-500/20 disabled:opacity-50"
             >
-              Acessar Plataforma
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {loading ? 'Entrando...' : 'Acessar Plataforma'}
+              {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
             </button>
             
             <div className="text-center">

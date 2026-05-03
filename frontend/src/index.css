@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes flash-accent {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-flash-accent {
+  animation: flash-accent 0.3s ease-out;
+}
+
 body {
   margin: 0;
   background-color: #f8fafc; /* slate-50 */

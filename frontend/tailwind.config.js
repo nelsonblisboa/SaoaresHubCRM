@@ -5,7 +5,12 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Cor de destaque dinâmica via CSS variable
+        accent: 'var(--accent-color, #10b981)',
+      }
+    },
   },
   plugins: [],
 }

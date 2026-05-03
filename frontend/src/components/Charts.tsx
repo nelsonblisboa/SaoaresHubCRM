@@ -1,208 +1,242 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts'
-import { useThemeClasses } from '../hooks/useThemeClasses'
-import { useTheme } from '../contexts/ThemeContext'
+import useThemeClasses from '../hooks/useThemeClasses'
 
-// ─── Custom Tooltip ───
-const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="bg-slate-900/95 border border-slate-700 rounded-xl px-4 py-3 shadow-2xl backdrop-blur-md">
-      <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">{label}</p>
-      {payload.map((entry: any, i: number) => (
-        <p key={i} className="text-sm font-bold" style={{ color: entry.color }}>
-          {entry.name}: {entry.value}
-        </p>
-      ))}
-    </div>
-  )
-}
-
-// ─── Funnel Performance Chart (Area) ───
-interface FunnelChartProps {
-  data?: { name: string; ia: number; manual: number }[]
-}
-
-export const FunnelPerformanceChart: React.FC<FunnelChartProps> = ({ data }) => {
+// Sales Performance Chart
+export const SalesPerformanceChart = () => {
   const theme = useThemeClasses()
-  const { isDarkMode } = useTheme()
-
-  const defaultData = [
-    { name: 'Seg', ia: 12, manual: 5 },
-    { name: 'Ter', ia: 19, manual: 8 },
-    { name: 'Qua', ia: 15, manual: 6 },
-    { name: 'Qui', ia: 22, manual: 9 },
-    { name: 'Sex', ia: 28, manual: 11 },
-    { name: 'Sáb', ia: 18, manual: 4 },
-    { name: 'Dom', ia: 10, manual: 2 },
+  
+  const chartData = [
+    { month: 'Jan', sales: 4000, revenue: 2400 },
+    { month: 'Feb', sales: 3000, revenue: 1398 },
+    { month: 'Mar', sales: 9800, revenue: 2000 },
+    { month: 'Apr', sales: 3908, revenue: 2780 },
+    { month: 'May', sales: 4800, revenue: 1890 },
+    { month: 'Jun', sales: 3800, revenue: 2390 },
+    { month: 'Jul', sales: 4300, revenue: 3490 },
   ]
 
-  const chartData = data || defaultData
-
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
-          <linearGradient id="gradientIA" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+          <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
           </linearGradient>
-          <linearGradient id="gradientManual" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#475569" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#475569" stopOpacity={0} />
+          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#1e293b' : '#e2e8f0'} />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 10, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+        <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+        <XAxis 
+          dataKey="month" 
+          tick={{ fontSize: 12, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
-        <YAxis
-          tick={{ fontSize: 10, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+        <YAxis 
+          tick={{ fontSize: 12, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <Area
-          type="monotone" dataKey="ia" name="IA"
-          stroke="#10b981" strokeWidth={2.5}
-          fill="url(#gradientIA)"
-          dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }}
-          activeDot={{ r: 6, fill: '#10b981', stroke: '#0f172a', strokeWidth: 2 }}
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            borderRadius: '8px',
+            border: '1px solid ' + theme.border
+          }}
+          itemStyle={{ color: theme.textPrimary }}
         />
-        <Area
-          type="monotone" dataKey="manual" name="Manual"
-          stroke="#475569" strokeWidth={2}
-          fill="url(#gradientManual)"
-          dot={{ r: 3, fill: '#475569', strokeWidth: 0 }}
-        />
+        <Area type="monotone" dataKey="sales" stroke="#3b82f6" fillOpacity={1} fill="url(#colorSales)" />
+        <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#colorRevenue)" />
       </AreaChart>
     </ResponsiveContainer>
   )
 }
 
-// ─── Pipeline Stage Bar Chart ───
-interface PipelineChartProps {
-  data?: { stage: string; count: number; stagnant: number }[]
-}
-
-export const PipelineStageChart: React.FC<PipelineChartProps> = ({ data }) => {
-  const { isDarkMode } = useTheme()
-
-  const defaultData = [
-    { stage: 'Novo', count: 24, stagnant: 3 },
-    { stage: 'Qualificado', count: 18, stagnant: 5 },
-    { stage: 'Proposta', count: 12, stagnant: 4 },
-    { stage: 'Negociação', count: 8, stagnant: 2 },
-    { stage: 'Ganho', count: 15, stagnant: 0 },
-    { stage: 'Perdido', count: 6, stagnant: 0 },
+// Pipeline Stage Chart
+export const PipelineStageChart = () => {
+  const theme = useThemeClasses()
+  
+  const chartData = [
+    { stage: 'Qualificação', leads: 400, converted: 240 },
+    { stage: 'Proposta', leads: 300, converted: 138 },
+    { stage: 'Negociação', leads: 200, converted: 980 },
+    { stage: 'Fechamento', leads: 278, converted: 390 },
+    { stage: 'Pós-venda', leads: 189, converted: 480 },
   ]
 
-  const chartData = data || defaultData
-
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#1e293b' : '#e2e8f0'} />
-        <XAxis
-          dataKey="stage"
-          tick={{ fontSize: 9, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+        <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+        <XAxis 
+          dataKey="stage" 
+          tick={{ fontSize: 12, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
-        <YAxis
-          tick={{ fontSize: 10, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+        <YAxis 
+          tick={{ fontSize: 12, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="count" name="Ativos" fill="#10b981" radius={[6, 6, 0, 0]} barSize={28} />
-        <Bar dataKey="stagnant" name="Estagnados" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={28} opacity={0.7} />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            borderRadius: '8px',
+            border: '1px solid ' + theme.border
+          }}
+          itemStyle={{ color: theme.textPrimary }}
+        />
+        <Bar dataKey="leads" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="converted" fill="#10b981" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )
 }
 
-// ─── Agent Distribution Pie Chart ───
-interface AgentPieProps {
-  data?: { name: string; value: number; color: string }[]
-}
-
-export const AgentDistributionChart: React.FC<AgentPieProps> = ({ data }) => {
-  const defaultData = [
-    { name: 'Vendas', value: 45, color: '#10b981' },
-    { name: 'Qualificador', value: 25, color: '#3b82f6' },
-    { name: 'Suporte', value: 15, color: '#f59e0b' },
-    { name: 'Agendador', value: 10, color: '#8b5cf6' },
-    { name: 'Reengajamento', value: 5, color: '#ec4899' },
+// Agent Distribution Chart
+export const AgentDistributionChart = () => {
+  const theme = useThemeClasses()
+  
+  const data = [
+    { name: 'Vendas', value: 400, color: '#10b981' },
+    { name: 'Qualificador', value: 300, color: '#3b82f6' },
+    { name: 'Suporte', value: 300, color: '#f59e0b' },
+    { name: 'Agendador', value: 200, color: '#8b5cf6' },
+    { name: 'Reengajamento', value: 278, color: '#ec4899' },
   ]
 
-  const chartData = data || defaultData
-
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
-          data={chartData}
-          cx="50%" cy="50%"
-          innerRadius={50} outerRadius={80}
-          paddingAngle={3}
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={80}
+          paddingAngle={5}
           dataKey="value"
-          stroke="none"
         >
-          {chartData.map((entry, i) => (
-            <Cell key={i} fill={entry.color} />
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            borderRadius: '8px',
+            border: '1px solid ' + theme.border
+          }}
+          itemStyle={{ color: theme.textPrimary }}
+        />
       </PieChart>
     </ResponsiveContainer>
   )
 }
 
-// ─── Weekly Comparison Mini Chart ───
-interface WeeklyBarProps {
-  data?: { day: string; leads: number; conversions: number }[]
-}
-
-export const WeeklyComparisonChart: React.FC<WeeklyBarProps> = ({ data }) => {
-  const { isDarkMode } = useTheme()
-
-  const defaultData = [
-    { day: 'Seg', leads: 8, conversions: 2 },
-    { day: 'Ter', leads: 12, conversions: 4 },
-    { day: 'Qua', leads: 10, conversions: 3 },
-    { day: 'Qui', leads: 15, conversions: 5 },
+// Weekly Comparison Chart
+export const WeeklyComparisonChart = () => {
+  const theme = useThemeClasses()
+  
+  const data = [
+    { day: 'Seg', leads: 45, conversions: 12 },
+    { day: 'Ter', leads: 52, conversions: 15 },
+    { day: 'Qua', leads: 38, conversions: 8 },
+    { day: 'Qui', leads: 61, conversions: 22 },
     { day: 'Sex', leads: 20, conversions: 7 },
     { day: 'Sáb', leads: 6, conversions: 1 },
     { day: 'Dom', leads: 3, conversions: 0 },
   ]
 
-  const chartData = data || defaultData
+  const chartData = data
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#1e293b' : '#e2e8f0'} />
+        <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
         <XAxis
           dataKey="day"
-          tick={{ fontSize: 10, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+          tick={{ fontSize: 10, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 10, fill: isDarkMode ? '#64748b' : '#94a3b8' }}
+          tick={{ fontSize: 10, fill: theme.textMuted }}
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="leads" name="Leads" fill="#334155" radius={[4, 4, 0, 0]} barSize={12} />
-        <Bar dataKey="conversions" name="Conversões" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            borderRadius: '8px',
+            border: '1px solid ' + theme.border
+          }}
+          itemStyle={{ color: theme.textPrimary }}
+        />
+        <Bar dataKey="leads" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="conversions" fill="#10b981" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+// Funnel Performance Chart
+export const FunnelPerformanceChart = () => {
+  const theme = useThemeClasses()
+  
+  const chartData = [
+    { stage: 'Visitantes', value: 1000, conversion: 100 },
+    { stage: 'Leads', value: 800, conversion: 80 },
+    { stage: 'Qualificados', value: 600, conversion: 60 },
+    { stage: 'Propostas', value: 400, conversion: 40 },
+    { stage: 'Fechados', value: 200, conversion: 20 },
+  ]
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 10, left: 60, bottom: 10 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+        <XAxis type="number" tick={{ fontSize: 12, fill: theme.textMuted }} />
+        <YAxis 
+          type="category" 
+          dataKey="stage" 
+          tick={{ fontSize: 12, fill: theme.textMuted }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip 
+          contentStyle={{
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            borderRadius: '8px',
+            border: '1px solid ' + theme.border
+          }}
+          itemStyle={{ color: theme.textPrimary }}
+        />
+        <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )

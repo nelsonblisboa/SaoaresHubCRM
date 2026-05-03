@@ -2,13 +2,15 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  
 }
 
 model Organization {
@@ -16,13 +18,16 @@ model Organization {
   name         String
   persona      String?  // Persona/tom de voz da IA para esta organização
   logo         String?  // URL do logo para white label
-  primaryColor String?  // Cor primária para branding
-  createdAt    DateTime @default(now())
+  primaryColor String?  @map("primary_color") // Cor primária para branding
+  createdAt    DateTime @default(now()) @map("created_at")
   users        User[]
   contacts     Contact[]
   leads        Lead[]
   campanhas    Campanha[]
   sequences    Sequence[]
+
+  @@map("organizations")
+  
 }
 
 model User {
@@ -30,25 +35,36 @@ model User {
   email          String       @unique
   name           String
   role           Role         @default(VENDEDOR)
-  organizationId String
+  organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id])
   assignedLeads  Lead[]
   devices        UserDevice[]
+  avatarUrl      String?      @map("avatar_url")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+
+    
+  @@map("profiles")
+  
 }
 
 model Contact {
   id                String             @id @default(uuid())
   name              String?
-  phoneNumber       String?            @unique
-  instagramUsername  String?            @unique
+  phoneNumber       String?            @unique @map("phone_number")
+  instagramUsername String?            @unique @map("instagram_username")
   tags              String[]
   source            String?            // whatsapp, instagram, manual
-  organizationId    String
+  organizationId    String             @map("organization_id")
   organization      Organization       @relation(fields: [organizationId], references: [id])
   leads             Lead[]
   conversations     Conversation[]
   scheduledMessages ScheduledMessage[]
-  createdAt         DateTime           @default(now())
+  sequenceEnrollments SequenceEnrollment[]
+  createdAt         DateTime           @default(now()) @map("created_at")
+
+  @@map("contacts")
+  
 }
 
 model Lead {
@@ -56,78 +72,92 @@ model Lead {
   stage          LeadStage     @default(NOVO)
   score          Int           @default(0)
   temperature    Temperature   @default(FRIO)
-  dealValue      Float?        // Valor da negociação
+  dealValue      Float?        @map("deal_value") // Valor da negociação
   notes          String?
-  funnelStage    String?       // Estágio interno do funil (QUALIFICACAO, OBJECOES, PROPOSTA, FOLLOWUP, FECHAMENTO)
-  contactId      String
+  funnelStage    String?       @map("funnel_stage") // Estágio interno do funil
+  contactId      String        @map("contact_id")
   contact        Contact       @relation(fields: [contactId], references: [id])
-  assignedToId   String?
+  assignedToId   String?       @map("assigned_to_id")
   assignedTo     User?         @relation(fields: [assignedToId], references: [id])
-  organizationId String
+  organizationId String        @map("organization_id")
   organization   Organization  @relation(fields: [organizationId], references: [id])
   conversations  Conversation[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  isDeleted      Boolean       @default(false) @map("is_deleted")
+  deletedAt      DateTime?     @map("deleted_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@map("leads")
+  
 }
 
 model Conversation {
   id             String             @id @default(uuid())
   status         ConversationStatus @default(ATIVA)
   channel        Channel
-  isAiActive     Boolean            @default(true)
-  lastMessage    String?
-  lastMessageAt  DateTime?
-  activeAgent    String?            // Qual agente IA está ativo nesta conversa
-  contactId      String
+  isAiActive     Boolean            @default(true) @map("is_ai_active")
+  lastMessage    String?            @map("last_message")
+  lastMessageAt  DateTime?          @map("last_message_at")
+  activeAgent    String?            @map("active_agent") // Qual agente IA está ativo nesta conversa
+  contactId      String             @map("contact_id")
   contact        Contact            @relation(fields: [contactId], references: [id])
-  leadId         String?
+  leadId         String?            @map("lead_id")
   lead           Lead?              @relation(fields: [leadId], references: [id])
   messages       Message[]
   handovers      Handover[]
-  createdAt      DateTime           @default(now())
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  @@map("conversations")
+  
 }
 
 model Message {
   id             String       @id @default(uuid())
   content        String
-  fromMe         Boolean
-  messageType    String       // text, image, audio
-  isAiGenerated  Boolean      @default(false)
-  agentKey       String?      // Qual agente IA gerou esta mensagem
+  fromMe         Boolean      @map("from_me")
+  messageType    String       @map("message_type") // text, image, audio
+  isAiGenerated  Boolean      @default(false) @map("is_ai_generated")
+  agentKey       String?      @map("agent_key") // Qual agente IA gerou esta mensagem
   timestamp      DateTime     @default(now())
-  conversationId String
+  conversationId String       @map("conversation_id")
   conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+  
 }
 
 model Handover {
   id             String              @id @default(uuid())
   reason         String
   status         HandoverStatus      @default(PENDENTE)
-  conversationId String
+  conversationId String              @map("conversation_id")
   conversation   Conversation        @relation(fields: [conversationId], references: [id])
-  requestedBy    String              // "IA" ou "HUMANO"
-  resolvedAt     DateTime?
-  createdAt      DateTime            @default(now())
+  requestedBy    String              @map("requested_by") // "IA" ou "HUMANO"
+  resolvedAt     DateTime?           @map("resolved_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  @@map("handovers")
+  
 }
 
 model Campanha {
   id             String        @id @default(uuid())
   name           String        @default("")
-  nome           String        @default("")
-  channel        String        @default("WHATSAPP")
-  canal          Channel?
+  channel        Channel       @default(WHATSAPP)
   segment        Json?         // Filtros de segmentação
-  segmento       Json?         // filtros de contatos (legado)
   status         String        @default("RASCUNHO")
-  aiPrompt       String?       // Prompt para gerar mensagens personalizadas
-  totalSent      Int           @default(0)
-  totalDelivered Int           @default(0)
-  totalReplied   Int           @default(0)
-  totalConverted Int           @default(0)
-  scheduledAt    DateTime?
-  organizationId String?
+  aiPrompt       String?       @map("ai_prompt") // Prompt para gerar mensagens personalizadas
+  totalSent      Int           @default(0) @map("total_sent")
+  totalDelivered Int           @default(0) @map("total_delivered")
+  totalReplied   Int           @default(0) @map("total_replied")
+  totalConverted Int           @default(0) @map("total_converted")
+  scheduledAt    DateTime?     @map("scheduled_at")
+  organizationId String?       @map("organization_id")
   organization   Organization? @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@map("campanhas")
+  
 }
 
 // ─── Sequências de Follow-up ───
@@ -136,37 +166,47 @@ model Sequence {
   id             String               @id @default(uuid())
   name           String
   trigger        String               // Ex: 'lead_cold_5days', 'no_reply_48h'
-  isActive       Boolean              @default(true)
-  organizationId String?
+  isActive       Boolean              @default(true) @map("is_active")
+  organizationId String?              @map("organization_id")
   organization   Organization?        @relation(fields: [organizationId], references: [id])
   steps          SequenceStep[]
   enrollments    SequenceEnrollment[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  @@map("sequences")
+  
 }
 
 model SequenceStep {
   id              String    @id @default(uuid())
-  order           Int
-  delayMinutes    Int       // Delay antes de enviar (em minutos)
-  messageTemplate String?   // Template fixo (se não usar IA)
+  order           Int       @map("order")
+  delayMinutes    Int       @map("delay_minutes") // Delay antes de enviar (em minutos)
+  messageTemplate String?   @map("message_template") // Template fixo (se não usar IA)
   channel         String    @default("WHATSAPP")
-  useAi           Boolean   @default(false)
-  aiPrompt        String?   // Prompt para a IA gerar mensagem
-  sequenceId      String
+  useAi           Boolean   @default(false) @map("use_ai")
+  aiPrompt        String?   @map("ai_prompt") // Prompt para a IA gerar mensagem
+  sequenceId      String    @map("sequence_id")
   sequence        Sequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@map("sequence_steps")
+  
 }
 
 model SequenceEnrollment {
   id            String    @id @default(uuid())
-  sequenceId    String
+  sequenceId    String    @map("sequence_id")
   sequence      Sequence  @relation(fields: [sequenceId], references: [id])
-  contactId     String
-  currentStep   Int       @default(1)
+  contactId     String    @map("contact_id")
+  contact       Contact   @relation(fields: [contactId], references: [id])
+  currentStep   Int       @default(1) @map("current_step")
   status        String    @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
-  nextRunAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime  @default(now())
+  nextRunAt     DateTime? @map("next_run_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("sequence_enrollments")
+  
 }
 
 // ─── Agendamento de Mensagens ───
@@ -176,18 +216,24 @@ model ScheduledMessage {
   content     String
   channel     String   @default("WHATSAPP")
   status      String   @default("PENDING") // PENDING, SENT, FAILED, CANCELLED
-  scheduledAt DateTime
-  sentAt      DateTime?
-  contactId   String
+  scheduledAt DateTime @map("scheduled_at")
+  sentAt      DateTime? @map("sent_at")
+  contactId   String   @map("contact_id")
   contact     Contact  @relation(fields: [contactId], references: [id])
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("scheduled_messages")
+  
 }
 
 model UserDevice {
   id     String @id @default(uuid())
-  userId String
+  userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id])
   token  String // para push notifications
+
+  @@map("user_devices")
+  
 }
 
 // Enums
@@ -196,6 +242,7 @@ enum Role {
   GERENTE
   VENDEDOR
   OPERADOR_IA 
+  
 }
 enum LeadStage { 
   NOVO
@@ -204,23 +251,30 @@ enum LeadStage {
   NEGOCIACAO
   GANHO
   PERDIDO 
+  
 }
 enum Temperature { 
   FRIO
   MORNO
   QUENTE 
+  
 }
 enum ConversationStatus { 
   ATIVA
   AGUARDANDO_HUMANO
   FECHADA 
+  
 }
 enum HandoverStatus { 
   PENDENTE
   ACEITO
   CONCLUIDO 
+  
 }
 enum Channel { 
   WHATSAPP
   INSTAGRAM 
+  
 }
+
+

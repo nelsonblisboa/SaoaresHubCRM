@@ -3,7 +3,11 @@ import {
   Search,
   Plus,
   MoreVertical,
-  Filter
+  Filter,
+  Trash2,
+  Calendar,
+  Pencil,
+  X
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useToast } from '../contexts/ToastContext'
@@ -11,6 +15,7 @@ import { useThemeClasses } from '../hooks/useThemeClasses'
 import { supabase } from '../lib/supabaseClient'
 import { supabaseService, Lead } from '../services/supabaseService'
 import { useAuth } from '../contexts/AuthContext'
+import { LeadForm } from '../components/LeadForm'
 
 const COLUMNS = [
   { id: 'NOVO',           title: 'Novo',           color: 'bg-blue-500' },
@@ -21,7 +26,7 @@ const COLUMNS = [
 ]
 
 const Kanban: React.FC = () => {
-  const { showSuccess, showInfo } = useToast()
+  const { showSuccess, showInfo, showError } = useToast()
   const theme = useThemeClasses()
   const { profile } = useAuth()
   
@@ -30,6 +35,10 @@ const Kanban: React.FC = () => {
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showLeadModal, setShowLeadModal] = useState(false)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [schedulingLead, setSchedulingLead] = useState<Lead | null>(null)
   const dragLeadId = useRef<string | null>(null)
 
   useEffect(() => {
@@ -112,7 +121,6 @@ const Kanban: React.FC = () => {
     
     // Salvar estado anterior para rollback
     const previousLeads = [...leads]
-    const previousStage = lead.stage
     
     try {
       // Optimistic update - atualizar UI imediatamente
@@ -151,6 +159,27 @@ const Kanban: React.FC = () => {
 
   const tempLabel = (temp: string) =>
     temp === 'QUENTE' ? '🔥 QUENTE' : temp === 'MORNO' ? '🌡️ MORNO' : '❄️ FRIO'
+
+  const handleDelete = async (leadId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este lead do Kanban?')) return
+    try {
+      await supabaseService.updateLead(leadId, { is_deleted: true } as any)
+      showSuccess('Lead excluído do Kanban!')
+      fetchLeads()
+    } catch (error: any) {
+      showError(error.message || 'Erro ao excluir lead')
+    }
+  }
+
+  const handleSchedule = (lead: Lead) => {
+    setSchedulingLead(lead)
+    setShowScheduleModal(true)
+  }
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead)
+    setShowLeadModal(true)
+  }
 
   if (loading) {
     return (
@@ -245,13 +274,12 @@ const Kanban: React.FC = () => {
                     </div>
                   )}
 
-                  {colLeads.map(lead => (
+{colLeads.map(lead => (
                     <div
                       key={lead.id}
                       draggable
                       onDragStart={e => handleDragStart(e, lead.id)}
                       onDragEnd={handleDragEnd}
-                      onClick={() => showSuccess(`Lead "${lead.contact?.name || lead.id}" selecionado`)}
                       className={`
                         ${theme.bgCardSolid} ${theme.border} border p-4 rounded-2xl
                         ${theme.borderHover} transition-all cursor-grab active:cursor-grabbing
@@ -263,13 +291,35 @@ const Kanban: React.FC = () => {
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${tempStyle(lead.temperature)}`}>
                           {tempLabel(lead.temperature)}
                         </span>
-                        <span className={`text-[10px] ${theme.textMuted} font-medium`}>Score: {lead.score}</span>
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleEdit(lead) }}
+                            className={`p-1.5 rounded-lg ${theme.bgHover} hover:text-emerald-500 transition-colors`}
+                            title="Editar"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleSchedule(lead) }}
+                            className={`p-1.5 rounded-lg ${theme.bgHover} hover:text-blue-500 transition-colors`}
+                            title="Agendar mensagem"
+                          >
+                            <Calendar size={12} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(lead.id) }}
+                            className={`p-1.5 rounded-lg ${theme.bgHover} hover:text-rose-500 transition-colors`}
+                            title="Excluir"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
-<h4 className={`font-bold ${theme.textPrimary} group-hover:text-emerald-400 transition-colors mb-1`}>
-                          {lead.contact?.name || `Lead ${lead.id.slice(0, 8)}`}
-                        </h4>
+                      <h4 className={`font-bold ${theme.textPrimary} group-hover:text-emerald-400 transition-colors mb-1`}>
+                        {lead.contact?.name || `Lead ${lead.id.slice(0, 8)}`}
+                      </h4>
                       <p className={`text-xs ${theme.textMuted} mb-3`}>
-                        Estágio: {lead.stage} | Temp: {lead.temperature}
+                        {lead.contact?.phone_number || 'Sem telefone'}
                       </p>
                       <div className={`flex justify-between items-center pt-3 border-t ${theme.border}`}>
                         <span className={`text-sm font-black ${theme.textPrimary} italic`}>
@@ -285,6 +335,153 @@ const Kanban: React.FC = () => {
           })}
         </div>
       </main>
+
+      {/* Modal de Edição de Lead */}
+      {showLeadModal && (
+        <LeadForm
+          lead={editingLead}
+          onClose={() => { setShowLeadModal(false); setEditingLead(null) }}
+          onSave={() => { setShowLeadModal(false); setEditingLead(null); fetchLeads() }}
+        />
+      )}
+
+      {/* Modal de Agendamento de Mensagem */}
+      {showScheduleModal && schedulingLead && (
+        <ScheduleMessageModal
+          lead={schedulingLead}
+          onClose={() => { setShowScheduleModal(false); setSchedulingLead(null) }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Modal de Agendamento de Mensagem
+interface ScheduleMessageModalProps {
+  lead: Lead
+  onClose: () => void
+}
+
+const ScheduleMessageModal: React.FC<ScheduleMessageModalProps> = ({ lead, onClose }) => {
+  const { showSuccess, showError } = useToast()
+  const theme = useThemeClasses()
+  const { profile } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [scheduleTime, setScheduleTime] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!profile?.organization_id || !message || !scheduleDate || !scheduleTime) return
+
+    try {
+      setLoading(true)
+      
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).toISOString()
+
+      // Buscar contact_id do lead
+      const { data: leadData } = await supabase
+        .from('leads')
+        .select('contact_id')
+        .eq('id', lead.id)
+        .single()
+
+      if (!leadData?.contact_id) {
+        throw new Error('Contato não encontrado para este lead')
+      }
+
+      const { error } = await supabase
+        .from('scheduled_messages')
+        .insert({
+          content: message,
+          channel: 'WHATSAPP',
+          status: 'PENDING',
+          scheduled_at: scheduledAt,
+          contact_id: leadData.contact_id,
+        })
+
+      if (error) throw error
+
+      showSuccess(`Mensagem agendada para ${new Date(scheduledAt).toLocaleString('pt-BR')}`)
+      onClose()
+    } catch (error: any) {
+      showError(error.message || 'Erro ao agendar mensagem')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className={`${theme.bgCard} w-full max-w-md mx-4 rounded-3xl ${theme.border} border overflow-hidden`}>
+        <div className={`flex items-center justify-between p-6 ${theme.border} border-b`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Calendar size={20} className="text-blue-400" />
+            </div>
+            <div>
+              <h3 className={`text-lg font-bold ${theme.textPrimary}`}>Agendar Mensagem</h3>
+              <p className={`text-xs ${theme.textMuted}`}>Para: {lead.contact?.name || 'Lead'}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className={`p-2 rounded-lg ${theme.bgHover} transition-colors`}>
+            <X size={20} className={theme.textMuted} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className={`block text-xs font-medium ${theme.textMuted} mb-1.5`}>Data</label>
+            <input
+              type="date"
+              required
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className={`w-full px-4 py-2.5 ${theme.bgCardSolid} ${theme.border} border rounded-xl text-sm ${theme.textPrimary} focus:ring-2 focus:ring-blue-500/50 focus:outline-none`}
+            />
+          </div>
+          <div>
+            <label className={`block text-xs font-medium ${theme.textMuted} mb-1.5`}>Horário</label>
+            <input
+              type="time"
+              required
+              value={scheduleTime}
+              onChange={(e) => setScheduleTime(e.target.value)}
+              className={`w-full px-4 py-2.5 ${theme.bgCardSolid} ${theme.border} border rounded-xl text-sm ${theme.textPrimary} focus:ring-2 focus:ring-blue-500/50 focus:outline-none`}
+            />
+          </div>
+          <div>
+            <label className={`block text-xs font-medium ${theme.textMuted} mb-1.5`}>Mensagem</label>
+            <textarea
+              required
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Digite a mensagem a ser enviada..."
+              rows={4}
+              className={`w-full px-4 py-2.5 ${theme.bgCardSolid} ${theme.border} border rounded-xl text-sm ${theme.textPrimary} placeholder:${theme.textPlaceholder} focus:ring-2 focus:ring-blue-500/50 focus:outline-none resize-none`}
+            />
+          </div>
+          <div className={`flex justify-end gap-3 pt-4 border-t ${theme.border}`}>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-6 py-2.5 rounded-xl ${theme.bgCardSolid} ${theme.border} border text-sm font-medium ${theme.textSecondary} ${theme.bgHover} transition-colors`}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !message || !scheduleDate || !scheduleTime}
+              className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+            >
+              <Calendar size={16} />
+              {loading ? 'Agendando...' : 'Agendar'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

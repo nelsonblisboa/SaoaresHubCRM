@@ -7,13 +7,13 @@ export interface Lead {
   stage: 'NOVO' | 'QUALIFICADO' | 'PROPOSTA' | 'NEGOCIACAO' | 'GANHO' | 'PERDIDO';
   score: number;
   temperature: 'QUENTE' | 'MORNO' | 'FRIO';
-  deal_value?: number;
-  notes?: string;
+  deal_value?: number | null;
+  notes?: string | null;
   funnel_stage?: string;
   organization_id: string;
   is_deleted: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   contact?: {
     id: string;
     name: string;
@@ -90,7 +90,7 @@ class SupabaseService {
     return data as Lead[];
   }
 
-  async createLead(leadData: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) {
+  async createLead(leadData: any) {
     const { data, error } = await supabase
       .from('leads')
       .insert(leadData)
@@ -101,7 +101,7 @@ class SupabaseService {
     return data as Lead;
   }
 
-  async updateLead(id: string, updates: Partial<Lead>) {
+  async updateLead(id: string, updates: any) {
     const { data, error } = await supabase
       .from('leads')
       .update(updates)

@@ -15,6 +15,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { supabaseService, Lead } from '../services/supabaseService'
+import { supabase } from '../lib/supabaseClient'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
@@ -95,12 +96,16 @@ export const LeadForm: React.FC<LeadFormProps> = ({ lead, onClose, onSave }) => 
 
   // Se está editando, carregar dados
   useEffect(() => {
-    if (lead?.contact) {
+    if (lead) {
+      const contactName = lead.contact?.name || ''
+      const contactPhone = lead.contact?.phone_number || ''
+      const contactInsta = lead.contact?.instagram_username || ''
+      
       setFormData(prev => ({
         ...prev,
-        name: lead.contact.name || '',
-        phone: lead.contact.phone_number || '',
-        instagram: lead.contact.instagram_username || '',
+        name: contactName,
+        phone: contactPhone,
+        instagram: contactInsta,
         stage: lead.stage,
         score: lead.score,
         temperature: lead.temperature,
@@ -128,7 +133,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({ lead, onClose, onSave }) => 
       if (!contactId) {
         // Verificar se contato já existe
         if (formData.phone) {
-          const { data: existingContacts } = await supabaseService['supabase']
+          const { data: existingContacts } = await supabase
             .from('contacts')
             .select('id')
             .eq('phone_number', formData.phone)
@@ -142,7 +147,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({ lead, onClose, onSave }) => 
 
         // Criar novo contato
         if (!contactId) {
-          const { data: newContact, error: contactError } = await supabaseService['supabase']
+          const { data: newContact, error: contactError } = await supabase
             .from('contacts')
             .insert({
               name: formData.name,
@@ -167,8 +172,8 @@ export const LeadForm: React.FC<LeadFormProps> = ({ lead, onClose, onSave }) => 
           stage: formData.stage,
           score: formData.score,
           temperature: formData.temperature,
-          deal_value: formData.deal_value ? parseFloat(formData.deal_value) : null,
-          notes: formData.notes || null,
+          deal_value: formData.deal_value ? parseFloat(formData.deal_value) : undefined,
+          notes: formData.notes || undefined,
           funnel_stage: formData.funnel_stage,
         })
         showSuccess('Lead atualizado com sucesso!')
@@ -178,8 +183,8 @@ export const LeadForm: React.FC<LeadFormProps> = ({ lead, onClose, onSave }) => 
           stage: formData.stage,
           score: formData.score,
           temperature: formData.temperature,
-          deal_value: formData.deal_value ? parseFloat(formData.deal_value) : null,
-          notes: formData.notes || null,
+          deal_value: formData.deal_value ? parseFloat(formData.deal_value) : undefined,
+          notes: formData.notes || undefined,
           funnel_stage: formData.funnel_stage,
           contact_id: contactId!,
           organization_id: profile.organization_id,

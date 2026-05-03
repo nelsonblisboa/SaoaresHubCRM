@@ -32,7 +32,7 @@ interface PipelineStage {
   stage: string
   count: number
   stagnant: number
-  conversion_rate: number
+  conversion_rate?: number
 }
 
 const Insights: React.FC = () => {

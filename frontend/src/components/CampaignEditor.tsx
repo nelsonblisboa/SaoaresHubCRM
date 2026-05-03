@@ -204,7 +204,7 @@ export const CampaignEditor: React.FC<CampaignEditorProps> = ({
       if (!response.ok) throw new Error('Erro ao enviar')
 
       showSuccess('Campanha sendo enviada!')
-      setCampaign(prev => ({ ...prev, status: 'ATIVA' }))
+      setCampaign(prev => ({ ...prev, status: 'ATIVA' } as any))
     } catch (err: any) {
       showError(err.message || 'Erro ao enviar campanha')
     } finally {
@@ -284,8 +284,8 @@ export const CampaignEditor: React.FC<CampaignEditorProps> = ({
                 {campaignId ? 'Editar Campanha' : 'Nova Campanha'}
               </h3>
               <p className={`text-xs ${theme.textMuted}`}>
-                {campaign.status === 'ATIVA' ? '🔴 Ativa' : 
-                 campaign.status === 'AGENDADA' ? '🔵 Agendada' : '📝 Rascunho'}
+                {(campaign.status as string) === 'ATIVA' ? '🔴 Ativa' : 
+                 (campaign.status as string) === 'AGENDADA' ? '🔵 Agendada' : '📝 Rascunho'}
               </p>
             </div>
           </div>

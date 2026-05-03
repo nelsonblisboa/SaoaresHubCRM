@@ -14,6 +14,7 @@ import Sidebar from '../components/Sidebar'
 import { useToast } from '../contexts/ToastContext'
 import { useThemeClasses } from '../hooks/useThemeClasses'
 import { supabaseService, Lead } from '../services/supabaseService'
+import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import { LeadForm } from '../components/LeadForm'
 import { ImportPreviewModal } from '../components/ImportPreviewModal'
@@ -176,7 +177,7 @@ const Leads: React.FC = () => {
       let contactId = ''
       
       if (data.phone) {
-        const { data: existingContacts } = await supabaseService['supabase']
+        const { data: existingContacts } = await supabase
           .from('contacts')
           .select('id')
           .eq('phone_number', data.phone)
@@ -187,7 +188,7 @@ const Leads: React.FC = () => {
           contactId = existingContacts.id
         } else {
           // Criar novo contato
-          const { data: newContact } = await supabaseService['supabase']
+          const { data: newContact } = await supabase
             .from('contacts')
             .insert({
               name: data.name || 'Lead Importado',
@@ -210,7 +211,7 @@ const Leads: React.FC = () => {
           stage: data.stage || 'NOVO',
           score: parseInt(data.score) || 1,
           temperature: data.temperature || 'FRIO',
-          deal_value: data.deal_value ? parseFloat(data.deal_value) : null,
+          deal_value: data.deal_value ? parseFloat(data.deal_value) : undefined,
           notes: data.notes || 'Importado via CSV',
           contact_id: contactId,
           organization_id: profile?.organization_id || ''
